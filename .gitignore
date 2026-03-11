@@ -1,1 +1,39 @@
+# OS
 .DS_Store
+Thumbs.db
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Cloudflare Wrangler
+.wrangler/
+dist/
+.dev.vars
+
+# Python (Scraper)
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+.env
+
+# Database
+*.sqlite
+*.db
+*.sql.gz
+
+# Logs
+logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
