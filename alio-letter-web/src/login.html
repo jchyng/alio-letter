@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>내 정보 관리 — Alio-Letter</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .login-container {
+      max-width: 400px;
+      margin: 80px auto;
+      text-align: center;
+      padding: 0 20px;
+    }
+    .login-card {
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 32px 24px;
+      box-shadow: var(--shadow-md);
+    }
+    .login-header h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--gray-900);
+      margin-bottom: 8px;
+    }
+    .login-header p {
+      color: var(--gray-500);
+      font-size: 0.9375rem;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="container">
+      <a href="/" class="nav-logo">Alio<span>-Letter</span></a>
+      <a href="/register.html" class="nav-cta">등록하기</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="login-container">
+      <div class="login-card">
+        <div class="login-header">
+          <h1>내 정보 관리</h1>
+          <p>가입하신 이메일을 입력하시면<br>정보 수정 및 구독 관리 링크를 보내드립니다.</p>
+        </div>
+
+        <form id="loginForm" onsubmit="handleLoginSubmit(event)">
+          <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+            <label class="form-label" for="loginEmail">이메일 주소</label>
+            <input type="email" id="loginEmail" class="form-input" placeholder="example@email.com" required>
+          </div>
+          
+          <div id="loginAlert" class="alert" style="margin-bottom: 20px; display: none;"></div>
+
+          <button type="submit" id="loginBtn" class="btn btn-primary btn-full btn-lg">
+            <span id="loginBtnText">관리 링크 발송</span>
+            <span id="loginBtnLoading" class="hidden"><span class="spinner"></span>발송 중...</span>
+          </button>
+        </form>
+
+        <div style="margin-top: 24px;">
+          <a href="/" class="btn btn-outline btn-full">홈으로 돌아가기</a>
+        </div>
+      </div>
+      
+      <p style="margin-top: 24px; font-size: 0.875rem; color: var(--gray-400);">
+        아직 회원이 아니신가요? <a href="/register.html" style="color: var(--primary); font-weight: 600;">지금 등록하기</a>
+      </p>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container text-center">
+      &copy; 2026 Alio-Letter<br>
+      문의: alio.letter.help@gmail.com
+    </div>
+  </footer>
+
+  <script>
+    async function handleLoginSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const btnText = document.getElementById('loginBtnText');
+      const btnLoading = document.getElementById('loginBtnLoading');
+      const btn = document.getElementById('loginBtn');
+      const alertBox = document.getElementById('loginAlert');
+
+      btn.disabled = true;
+      btnText.classList.add('hidden');
+      btnLoading.classList.remove('hidden');
+      alertBox.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/send-magic-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          alertBox.className = 'alert alert-success show';
+          alertBox.innerHTML = '입력하신 이메일로 링크가 발송되었습니다.<br>이메일함을 확인해주세요.';
+          document.getElementById('loginForm').style.display = 'none';
+        } else {
+          alertBox.className = 'alert alert-error show';
+          alertBox.textContent = data.error || '발송 중 오류가 발생했습니다.';
+        }
+      } catch (err) {
+        alertBox.className = 'alert alert-error show';
+        alertBox.textContent = '네트워크 오류가 발생했습니다.';
+      } finally {
+        btn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnLoading.classList.add('hidden');
+      }
+    }
+  </script>
+
+</body>
+</html>

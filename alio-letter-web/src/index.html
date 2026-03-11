@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alio-Letter — 공기업 채용공고 맞춤 알림</title>
+  <meta name="description" content="잡알리오 채용공고를 AI가 분석해서 내 스펙에 맞는 공고만 이메일로 받아보세요.">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    /* ===== Hero ===== */
+    .hero {
+      padding: 56px 0 48px;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      background: var(--primary-50);
+      color: var(--primary);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      line-height: 1.35;
+      color: var(--gray-900);
+      margin-bottom: 16px;
+      letter-spacing: -0.03em;
+    }
+    .hero h1 em {
+      font-style: normal;
+      color: var(--primary);
+    }
+    .hero p {
+      font-size: 1.0625rem;
+      color: var(--gray-500);
+      max-width: 480px;
+      margin: 0 auto 28px;
+      line-height: 1.6;
+    }
+
+    /* ===== Features ===== */
+    .features {
+      display: grid;
+      gap: 20px;
+    }
+    .feature-card {
+      text-align: center;
+      padding: 28px 20px;
+    }
+    .feature-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--primary-50);
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 14px;
+    }
+    .feature-card h3 {
+      font-size: 1.0625rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--gray-800);
+    }
+    .feature-card p {
+      font-size: 0.9375rem;
+      color: var(--gray-500);
+      line-height: 1.6;
+    }
+
+    /* ===== How It Works ===== */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      position: relative;
+    }
+    .step {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .step-num {
+      width: 40px;
+      height: 40px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .step-content h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      margin-bottom: 4px;
+    }
+    .step-content p {
+      font-size: 0.9375rem;
+      color: var(--gray-500);
+      line-height: 1.5;
+    }
+
+    /* ===== Email Preview ===== */
+    .email-preview {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .email-preview-header {
+      background: var(--gray-200);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .email-preview-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--gray-400);
+    }
+    .email-preview-body {
+      padding: 20px;
+    }
+    .email-preview-body .ep-title {
+      font-weight: 700;
+      color: var(--gray-800);
+      font-size: 0.9375rem;
+      margin-bottom: 12px;
+    }
+    .ep-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 0.8125rem;
+      color: var(--gray-600);
+    }
+    .ep-check {
+      color: var(--success);
+      font-weight: 700;
+    }
+    .ep-cross {
+      color: var(--error);
+      font-weight: 700;
+    }
+    .ep-divider {
+      height: 1px;
+      background: var(--gray-200);
+      margin: 12px 0;
+    }
+    .ep-score {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin: 8px 0;
+    }
+
+    /* ===== Pricing ===== */
+    .pricing-grid {
+      display: grid;
+      gap: 16px;
+    }
+    .pricing-card {
+      padding: 28px 24px;
+      text-align: center;
+      position: relative;
+    }
+    .pricing-card.featured {
+      border-color: var(--primary);
+      border-width: 2px;
+    }
+    .pricing-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 14px;
+      border-radius: 12px;
+    }
+    .pricing-plan {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      margin-bottom: 8px;
+    }
+    .pricing-price {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--gray-900);
+      letter-spacing: -0.03em;
+    }
+    .pricing-price small {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--gray-500);
+    }
+    .pricing-features {
+      list-style: none;
+      margin: 20px 0;
+      text-align: left;
+    }
+    .pricing-features li {
+      padding: 6px 0;
+      font-size: 0.9375rem;
+      color: var(--gray-600);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pricing-features li::before {
+      content: '';
+      width: 18px;
+      height: 18px;
+      background: var(--success-light);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2316A34A' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    /* ===== FAQ ===== */
+    .faq-item {
+      border-bottom: 1px solid var(--gray-200);
+      padding: 20px 0;
+    }
+    .faq-item:last-child {
+      border-bottom: none;
+    }
+    .faq-q {
+      font-weight: 700;
+      color: var(--gray-800);
+      font-size: 0.9375rem;
+      margin-bottom: 8px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .faq-q::after {
+      content: '+';
+      font-size: 1.25rem;
+      color: var(--gray-400);
+      flex-shrink: 0;
+      transition: transform var(--transition);
+    }
+    .faq-item.open .faq-q::after {
+      content: '-';
+    }
+    .faq-a {
+      font-size: 0.9375rem;
+      color: var(--gray-500);
+      line-height: 1.6;
+      display: none;
+    }
+    .faq-item.open .faq-a {
+      display: block;
+    }
+
+    /* ===== Bottom CTA ===== */
+    .bottom-cta {
+      text-align: center;
+      padding: 48px 0;
+      background: var(--primary-50);
+      border-radius: var(--radius-lg);
+      margin: 0 20px;
+    }
+    .bottom-cta h2 {
+      font-size: 1.375rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 12px;
+    }
+    .bottom-cta p {
+      color: var(--gray-500);
+      margin-bottom: 24px;
+      font-size: 0.9375rem;
+    }
+
+    /* ===== Desktop ===== */
+    @media (min-width: 640px) {
+      .hero { padding: 80px 0 64px; }
+      .hero h1 { font-size: 2.25rem; }
+      .features { grid-template-columns: repeat(3, 1fr); }
+      .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="container container-wide">
+      <a href="/" class="nav-logo">Alio<span>-Letter</span></a>
+      <div style="display: flex; gap: 12px;">
+        <a href="/login.html" class="btn btn-outline" style="padding: 8px 16px; font-size: 0.875rem;">내 정보 관리</a>
+        <a href="/register.html" class="nav-cta">등록하기</a>
+      </div>
+    </div>
+  </nav>
+
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">잡알리오 공고 자동 분석 서비스</div>
+      <h1>공기업 채용공고,<br>더 이상 <em>직접 찾지 마세요</em></h1>
+      <p>잡알리오 채용공고를 AI가 분석해서 내 스펙에 맞는 공고만 이메일로 받아보세요</p>
+      <a href="/register.html" class="btn btn-primary btn-lg">무료로 시작하기</a>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section">
+    <div class="container container-wide">
+      <div class="features">
+        <div class="card feature-card">
+          <div class="feature-icon">&#128269;</div>
+          <h3>자동 공고 탐색</h3>
+          <p>잡알리오 신규 채용공고를 매일 자동으로 수집합니다</p>
+        </div>
+        <div class="card feature-card">
+          <div class="feature-icon">&#129302;</div>
+          <h3>AI 맞춤 분석</h3>
+          <p>내 스펙 기반 지원자격 검토와 가점 분석까지 한눈에</p>
+        </div>
+        <div class="card feature-card">
+          <div class="feature-icon">&#128233;</div>
+          <h3>이메일 리포트</h3>
+          <p>분석 결과를 깔끔한 리포트로 이메일에 전달합니다</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="section" style="background: var(--gray-50);">
+    <div class="container">
+      <h2 class="section-title text-center">이렇게 동작합니다</h2>
+      <p class="section-subtitle text-center">3단계면 충분합니다</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h3>내 스펙과 희망조건 등록</h3>
+            <p>학력, 자격증, 어학, 희망 직무/지역을 자유롭게 적어주세요. AI가 알아서 정리합니다.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h3>AI가 매일 공고를 분석</h3>
+            <p>잡알리오에 등록되는 채용공고 PDF를 AI가 자동으로 읽고 구조화합니다.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h3>맞춤 리포트를 이메일로 수신</h3>
+            <p>내 조건에 맞는 공고가 있으면 자격 체크, 가점 분석까지 담긴 리포트를 보내드립니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Email Preview -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title text-center">이런 리포트를 받게 됩니다</h2>
+      <p class="section-subtitle text-center">실제 발송되는 분석 리포트 미리보기</p>
+      <div class="email-preview">
+        <div class="email-preview-header">
+          <div class="email-preview-dot"></div>
+          <div class="email-preview-dot"></div>
+          <div class="email-preview-dot"></div>
+          <span style="margin-left: 8px; font-size: 0.8125rem; color: var(--gray-500);">
+            [Alio-Letter] 한국남부발전 채용공고 분석 리포트
+          </span>
+        </div>
+        <div class="email-preview-body">
+          <div class="ep-title">한국남부발전(주) — 2026년 상반기 신입사원 채용</div>
+          <div class="ep-row"><span style="color: var(--gray-400);">접수기간</span> 2026.03.01 ~ 2026.03.12</div>
+          <div class="ep-divider"></div>
+          <div class="ep-title" style="font-size: 0.8125rem;">매칭 포지션: 발전-전기 (21명)</div>
+          <div class="ep-row"><span class="ep-check">&#10003;</span> 학력: 제한 없음 — 충족</div>
+          <div class="ep-row"><span class="ep-check">&#10003;</span> 병역: 이행 필요 — 충족 (군필)</div>
+          <div class="ep-row"><span class="ep-check">&#10003;</span> 어학: 제한 없음 — 충족</div>
+          <div class="ep-divider"></div>
+          <div style="font-size: 0.8125rem; color: var(--gray-500); margin-bottom: 4px;">서류 점수 예상</div>
+          <div class="ep-row">외국어: 토익 820점 → 48.2 / 50점</div>
+          <div class="ep-row">자격증: 전기기사 → 별첨 확인 필요</div>
+          <div class="ep-score">예상 합계: 48.2 / 100점</div>
+          <div class="ep-divider"></div>
+          <div class="ep-row"><span class="ep-check">&#10003;</span> 적용 가능 가점: 등록장애인 (서류면제, 필기 10%)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Beta Test Info -->
+  <section class="section" style="background: var(--gray-50);">
+    <div class="container">
+      <h2 class="section-title text-center">베타 테스트 진행 중</h2>
+      <p class="section-subtitle text-center">지금 등록하시면 모든 기능을 무료로 이용하실 수 있습니다</p>
+      
+      <div class="card" style="max-width: 600px; margin: 0 auto; text-align: center; border-color: var(--primary); border-width: 2px;">
+        <div class="hero-badge" style="background: var(--primary); color: #fff; margin-bottom: 16px;">Beta Version 1.0</div>
+        <h3 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 12px;">전체 기능 무료 제공</h3>
+        <ul style="list-style: none; text-align: left; max-width: 300px; margin: 20px auto; padding: 0;">
+          <li style="margin-bottom: 8px;">✅ 맞춤형 공고 알림</li>
+          <li style="margin-bottom: 8px;">✅ AI 정밀 분석 리포트</li>
+          <li style="margin-bottom: 8px;">✅ 서류 통과 가능성 예측</li>
+          <li style="margin-bottom: 8px;">✅ 가점 항목 자동 분석</li>
+        </ul>
+        <p style="color: var(--gray-500); font-size: 0.875rem; margin-bottom: 24px;">베타 기간 동안 제한 없이 마음껏 경험해보세요!</p>
+        <a href="/register.html" class="btn btn-primary btn-full btn-lg">무료로 등록하기</a>
+      </div>
+      
+      <p class="text-center text-muted text-sm mt-8">별도의 결제 정보 등록 없이 이메일 인증만으로 바로 시작할 수 있습니다.</p>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title text-center">자주 묻는 질문</h2>
+      <div class="mt-8">
+        <div class="faq-item open">
+          <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">어떤 공고를 분석하나요?</div>
+          <div class="faq-a">잡알리오(job.alio.go.kr)에 등록되는 모든 공공기관 채용공고를 대상으로 합니다. 공기업, 준정부기관, 기타공공기관 등이 포함됩니다.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">알림은 얼마나 자주 오나요?</div>
+          <div class="faq-a">매일 2회(오전/오후) 신규 공고를 탐색하며, 내 조건에 매칭되는 공고가 있을 때만 이메일을 보냅니다. 해당 공고가 없는 날에는 이메일이 발송되지 않습니다.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">내 정보는 안전한가요?</div>
+          <div class="faq-a">입력하신 스펙 정보는 공고 매칭 목적으로만 사용되며 제3자에게 공유되지 않습니다. 이메일 링크를 통해 언제든 정보를 수정하거나 삭제할 수 있습니다.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">등록 후 정보 수정은 어떻게 하나요?</div>
+          <div class="faq-a">등록 확인 이메일에 포함된 수정 링크로 언제든 변경할 수 있습니다. 별도 로그인 없이 링크 클릭만으로 수정이 가능합니다.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">해지는 어떻게 하나요?</div>
+          <div class="faq-a">프로필 수정 페이지 하단에서 언제든 알림 수신을 중단할 수 있습니다. 현재 결제 주기가 끝나면 서비스가 중단됩니다.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom CTA -->
+  <section class="section">
+    <div class="bottom-cta">
+      <h2>공부에만 집중하세요.<br>공고 분석은 저희가 할게요.</h2>
+      <p>매일 잡알리오를 확인하는 시간, 이제 절약하세요</p>
+      <a href="/register.html" class="btn btn-primary btn-lg">지금 등록하기</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      &copy; 2026 Alio-Letter<br>
+      출처: 잡알리오(job.alio.go.kr)<br>
+      문의: alio.letter.help@gmail.com
+    </div>
+  </footer>
+
+</body>
+</html>
