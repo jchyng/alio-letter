@@ -1,0 +1,10 @@
+name = "alio-letter"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "./src"
+
+[vars]
+GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
+DB_HOST = "db.yourdomain.com"
+DB_USER = "alio_user"
+DB_NAME = "alio_db"
+# DB_PASSWORD는 wrangler secret으로 관리하는 것을 권장합니다.

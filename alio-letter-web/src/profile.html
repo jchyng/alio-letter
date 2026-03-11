@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>내 정보 수정 — Alio-Letter</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .page-header {
+      padding: 40px 0 8px;
+    }
+    .page-header h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--gray-900);
+      letter-spacing: -0.02em;
+    }
+    .page-header p {
+      color: var(--gray-500);
+      margin-top: 8px;
+      font-size: 0.9375rem;
+    }
+    .profile-form {
+      padding: 32px 0 64px;
+    }
+    .form-section-label {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--primary);
+      display: inline-block;
+    }
+    .form-section {
+      margin-bottom: 36px;
+    }
+
+    /* Loading skeleton */
+    .skeleton {
+      padding: 60px 0;
+      text-align: center;
+    }
+    .skeleton-bar {
+      height: 18px;
+      background: var(--gray-200);
+      border-radius: 4px;
+      margin: 12px auto;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Error state */
+    .error-view {
+      text-align: center;
+      padding: 80px 0;
+      display: none;
+    }
+    .error-icon {
+      width: 72px;
+      height: 72px;
+      background: var(--error-light);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    /* Success message */
+    .success-view {
+      text-align: center;
+      padding: 80px 0;
+      display: none;
+    }
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      background: var(--success-light);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    /* Subscription info */
+    .subscription-bar {
+      padding: 14px 16px;
+      background: var(--primary-50);
+      border: 1px solid var(--primary-light);
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      color: var(--gray-700);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    /* Meta info */
+    .meta-info {
+      font-size: 0.8125rem;
+      color: var(--gray-400);
+      margin-top: 24px;
+    }
+
+    /* Unsubscribe */
+    .unsubscribe-area {
+      text-align: center;
+      padding: 24px 0;
+      border-top: 1px solid var(--gray-200);
+      margin-top: 32px;
+    }
+    .unsubscribe-link {
+      color: var(--gray-400);
+      font-size: 0.8125rem;
+      text-decoration: underline;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: inherit;
+    }
+    .unsubscribe-link:hover {
+      color: var(--error);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.show {
+      display: flex;
+    }
+    .modal {
+      background: #fff;
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+    .modal h3 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .modal p {
+      color: var(--gray-500);
+      font-size: 0.9375rem;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+    }
+    .modal-actions .btn {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="container">
+      <a href="/" class="nav-logo">Alio<span>-Letter</span></a>
+      <a href="/register.html" class="nav-cta">등록하기</a>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- Loading State -->
+    <div id="loadingView" class="skeleton">
+      <div class="skeleton-bar" style="width: 40%;"></div>
+      <div class="skeleton-bar" style="width: 70%;"></div>
+      <div class="skeleton-bar" style="width: 55%;"></div>
+      <p class="text-muted mt-4">정보를 불러오는 중...</p>
+    </div>
+
+    <!-- Error State (invalid token) -->
+    <div id="errorView" class="error-view">
+      <div class="error-icon">!</div>
+      <h2 style="font-size: 1.375rem; font-weight: 700; margin-bottom: 12px;">유효하지 않은 링크입니다</h2>
+      <p class="text-muted">등록 확인 이메일의 수정 링크를 다시 확인해주세요.</p>
+      <div class="mt-8">
+        <a href="/" class="btn btn-outline">홈으로 돌아가기</a>
+      </div>
+    </div>
+
+    <!-- Form View -->
+    <div id="formView" style="display: none;">
+      <div class="page-header">
+        <h1>내 정보 수정</h1>
+        <p>등록 정보를 수정하면 다음 공고 분석부터 반영됩니다.</p>
+      </div>
+
+      <!-- Subscription Status -->
+      <div id="subscriptionBar" class="subscription-bar" style="display: none;"></div>
+
+      <!-- Alert Messages -->
+      <div id="alertMsg" class="alert"></div>
+
+      <form id="profileForm" class="profile-form" novalidate>
+
+        <!-- 기본정보 -->
+        <div class="form-section">
+          <div class="form-section-label">기본정보</div>
+
+          <div class="form-group">
+            <label class="form-label" for="name">이름 <span class="required">*</span></label>
+            <input type="text" id="name" name="name" class="form-input" maxlength="20" required>
+            <div class="form-error">이름을 입력해주세요 (2~20자)</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="email">이메일</label>
+            <input type="email" id="email" class="form-input readonly" readonly>
+            <div class="form-hint">이메일은 변경할 수 없습니다. 변경이 필요하면 새로 등록해주세요.</div>
+          </div>
+        </div>
+
+        <!-- 나의 스펙 -->
+        <div class="form-section">
+          <div class="form-section-label">나의 스펙</div>
+
+          <div class="form-group">
+            <label class="form-label" for="specText">나의 스펙 <span class="required">*</span></label>
+            <textarea id="specText" name="spec_text" class="form-textarea" required></textarea>
+            <div class="form-hint-box">
+              아래 내용을 자유롭게 적어주세요:<br>
+              &bull; 최종 학력 + 전공 (예: 4년제 전기공학과 졸업)<br>
+              &bull; 생년월일 또는 나이 (선택. 연령 제한 체크에 사용)<br>
+              &bull; 보유 자격증<br>
+              &bull; 어학 성적 (토익, 토익스피킹, OPIc 등)<br>
+              &bull; 병역 상태 (군필/미필/면제/해당없음)<br>
+              &bull; 해당되는 항목: 등록장애인, 취업지원대상자(보훈), 저소득층, 북한이탈주민, 다문화가족, 자립준비청년
+            </div>
+            <div class="form-error">스펙 정보를 입력해주세요</div>
+          </div>
+        </div>
+
+        <!-- 희망 조건 -->
+        <div class="form-section">
+          <div class="form-section-label">희망 조건</div>
+
+          <div class="form-group">
+            <label class="form-label" for="prefText">희망 조건 <span class="required">*</span></label>
+            <textarea id="prefText" name="pref_text" class="form-textarea" required></textarea>
+            <div class="form-hint-box">
+              아래 내용을 자유롭게 적어주세요:<br>
+              &bull; 희망 직무 분야 (사무, ICT, 기계, 전기, 화학, 토목, 건축 등)<br>
+              &bull; 희망 근무 지역 (시/도 단위)<br>
+              &bull; 관심 기관 이름<br>
+              &bull; 희망 채용구분 (일반, 장애, 보훈, 고졸 등)<br>
+              &bull; 희망 연봉 수준 (선택. 예: 5천만원 이상)
+            </div>
+            <div class="form-error">희망 조건을 입력해주세요</div>
+          </div>
+        </div>
+
+        <!-- 제출 -->
+        <div class="form-section">
+          <button type="submit" id="submitBtn" class="btn btn-primary btn-full btn-lg">
+            <span id="submitText">수정하기</span>
+            <span id="submitLoading" class="hidden"><span class="spinner"></span>수정 처리 중...</span>
+          </button>
+        </div>
+
+        <!-- Meta -->
+        <div id="metaInfo" class="meta-info"></div>
+
+      </form>
+
+      <!-- Unsubscribe -->
+      <div class="unsubscribe-area">
+        <button class="unsubscribe-link" onclick="showUnsubModal()">알림 수신을 중단하시겠습니까?</button>
+      </div>
+    </div>
+
+    <!-- Success View -->
+    <div id="successView" class="success-view">
+      <div class="success-icon">&#10003;</div>
+      <h2 style="font-size: 1.375rem; font-weight: 700; margin-bottom: 12px;">정보가 수정되었습니다!</h2>
+      <p class="text-muted" style="max-width: 400px; margin: 0 auto; line-height: 1.7;">
+        다음 공고 분석부터 변경된 정보가 반영됩니다.
+      </p>
+      <div class="mt-8">
+        <a href="/" class="btn btn-outline">홈으로</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Unsubscribe Modal -->
+  <div id="unsubModal" class="modal-overlay">
+    <div class="modal">
+      <h3>알림 수신을 중단하시겠습니까?</h3>
+      <p>알림 수신을 중단하시면 등록된 모든 정보가 삭제되며 다시 복구할 수 없습니다.</p>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="hideUnsubModal()">취소</button>
+        <button class="btn btn-primary" style="background: var(--error);" onclick="confirmUnsub()">데이터 삭제 및 탈퇴</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      &copy; 2026 Alio-Letter<br>
+      출처: 잡알리오(job.alio.go.kr)<br>
+      문의: alio.letter.help@gmail.com
+    </div>
+  </footer>
+
+  <script>
+    // Extract token from URL path
+    const pathParts = window.location.pathname.split('/');
+    const token = pathParts[pathParts.length - 1] || pathParts[pathParts.length - 2];
+
+    const loadingView = document.getElementById('loadingView');
+    const errorView = document.getElementById('errorView');
+    const formView = document.getElementById('formView');
+    const successView = document.getElementById('successView');
+    const alertMsg = document.getElementById('alertMsg');
+
+    // Load profile data
+    async function loadProfile() {
+      if (!token || token === 'profile.html' || token.length < 10) {
+        showErrorState();
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/profile/${token}`);
+        const data = await res.json();
+
+        if (data.error === 'invalid_token' || !data.name) {
+          showErrorState();
+          return;
+        }
+
+        // Populate form
+        document.getElementById('name').value = data.name || '';
+        document.getElementById('email').value = data.email || '';
+        document.getElementById('specText').value = data.raw_spec_text || '';
+        document.getElementById('prefText').value = data.raw_pref_text || '';
+
+        // Show beta status
+        const bar = document.getElementById('subscriptionBar');
+        bar.innerHTML = `<span style="display: flex; align-items: center; gap: 6px;">
+          <span style="width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></span>
+          현재 <strong>베타 테스터</strong>로 모든 기능을 무료 이용 중입니다.
+        </span>`;
+        bar.style.display = 'flex';
+        bar.style.background = 'var(--primary-50)';
+        bar.style.borderColor = 'var(--primary-light)';
+
+        // Show meta info
+        if (data.synced_at) {
+          document.getElementById('metaInfo').textContent = `마지막 수정: ${new Date(data.synced_at).toLocaleString('ko-KR')}`;
+        }
+
+        // Auto-resize textareas
+        document.querySelectorAll('.form-textarea').forEach(ta => {
+          ta.style.height = 'auto';
+          ta.style.height = Math.max(140, ta.scrollHeight) + 'px';
+        });
+
+        loadingView.style.display = 'none';
+        formView.style.display = 'block';
+
+      } catch (err) {
+        console.error('Profile load error:', err);
+        showErrorState();
+      }
+    }
+
+    function showErrorState() {
+      loadingView.style.display = 'none';
+      errorView.style.display = 'block';
+    }
+
+    // Validation
+    function validateName(name) {
+      const trimmed = name.trim();
+      return trimmed.length >= 2 && trimmed.length <= 20;
+    }
+
+    function clearErrors() {
+      document.querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+    }
+
+    function showError(fieldId) {
+      document.getElementById(fieldId).closest('.form-group').classList.add('has-error');
+    }
+
+    function showAlert(type, message) {
+      alertMsg.className = `alert alert-${type} show`;
+      alertMsg.textContent = message;
+      alertMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function setLoading(loading) {
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = loading;
+      document.getElementById('submitText').classList.toggle('hidden', loading);
+      document.getElementById('submitLoading').classList.toggle('hidden', !loading);
+    }
+
+    // Form submission
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearErrors();
+
+      const name = document.getElementById('name').value;
+      const specText = document.getElementById('specText').value;
+      const prefText = document.getElementById('prefText').value;
+
+      let hasError = false;
+      if (!validateName(name)) { showError('name'); hasError = true; }
+      if (!specText.trim()) { showError('specText'); hasError = true; }
+      if (!prefText.trim()) { showError('prefText'); hasError = true; }
+
+      if (hasError) {
+        document.querySelector('.has-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const res = await fetch(`/api/profile/${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name.trim(),
+            spec_text: specText.trim(),
+            pref_text: prefText.trim()
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          formView.style.display = 'none';
+          successView.style.display = 'block';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          showAlert('error', data.error || '수정에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        }
+      } catch (err) {
+        showAlert('error', '네트워크 오류가 발생했습니다.');
+        console.error('Profile update error:', err);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    // Auto-resize textareas
+    document.querySelectorAll('.form-textarea').forEach(textarea => {
+      textarea.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.max(140, this.scrollHeight) + 'px';
+      });
+    });
+
+    // Unsubscribe modal
+    function showUnsubModal() {
+      document.getElementById('unsubModal').classList.add('show');
+    }
+    function hideUnsubModal() {
+      document.getElementById('unsubModal').classList.remove('show');
+    }
+    async function confirmUnsub() {
+      hideUnsubModal();
+      try {
+        const res = await fetch('/api/subscribe/cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showAlert('success', '알림 수신이 중단되었습니다. 현재 결제 주기 종료 후 서비스가 중단됩니다.');
+        } else {
+          showAlert('error', '처리 중 오류가 발생했습니다.');
+        }
+      } catch (err) {
+        showAlert('error', '네트워크 오류가 발생했습니다.');
+      }
+    }
+
+    // Click outside modal to close
+    document.getElementById('unsubModal').addEventListener('click', function(e) {
+      if (e.target === this) hideUnsubModal();
+    });
+
+    // Init
+    loadProfile();
+  </script>
+
+</body>
+</html>
