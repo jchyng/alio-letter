@@ -1,0 +1,12 @@
+{
+  "name": "alio-letter-web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler pages dev src --port 8788",
+    "deploy": "wrangler pages deploy src"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
