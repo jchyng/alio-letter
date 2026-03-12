@@ -1,0 +1,519 @@
+{
+  "postings": {
+    "alio_id": "2026-01",
+    "title": "한국남부발전(주) 2026년 상반기 신입사원 및 별정직 채용공고",
+    "org_name": "한국남부발전",
+    "org_type": "공기업",
+    "regions": ["부산광역시", "인천광역시", "경상남도", "강원도", "경상북도", "제주특별자치도", "세종특별자치시"],
+    "job_fields": ["사무직", "전산직", "기술직", "별정직"],
+    "employment_types": ["정규직"],
+    "recruit_types": ["신입"],
+    "education_levels": ["학력무관", "고졸"],
+    "posted_date": "2026-02-23",
+    "deadline": "2026-03-12 12:00:00",
+    "total_positions": 102,
+    "positions_summary": [
+      {
+        "field": "사무",
+        "total": 9,
+        "by_track": { "일반": 8, "장애": 1 }
+      },
+      {
+        "field": "ICT",
+        "total": 8,
+        "by_track": { "일반": 7, "보훈": 1 }
+      },
+      {
+        "field": "기계",
+        "total": 34,
+        "by_track": { "일반": 25, "지역전문": 2, "장애": 2, "보훈": 1, "고졸": 4 }
+      },
+      {
+        "field": "전기",
+        "total": 30,
+        "by_track": { "일반": 21, "지역전문": 2, "장애": 2, "보훈": 1, "고졸": 4 }
+      },
+      {
+        "field": "화학",
+        "total": 9,
+        "by_track": { "일반": 7, "장애": 1, "보훈": 1 }
+      },
+      {
+        "field": "토목",
+        "total": 4,
+        "by_track": { "일반": 4 }
+      },
+      {
+        "field": "건축",
+        "total": 7,
+        "by_track": { "일반": 7 }
+      },
+      {
+        "field": "기술담당원(하동)",
+        "total": 1,
+        "by_track": { "별정직": 1 }
+      }
+    ],
+    "schedule": [
+      { "step": "채용공고", "start": "2026-02-23", "end": "2026-03-12 12:00", "note": "온라인 공고" },
+      { "step": "지원서접수", "start": "2026-03-03 10:00", "end": "2026-03-12 12:00", "note": "온라인 접수 (우편·방문 불가)" },
+      { "step": "필기대상자발표", "date": "2026-03-25", "note": "채용 홈페이지 및 문자 통보" },
+      { "step": "필기전형", "date": "2026-04-05", "note": "서울 또는 부산 선택 (고사장 운영상황에 따라 변경 가능)" },
+      { "step": "면접대상자발표", "date": "2026-04-10", "note": "채용 홈페이지 및 문자 통보" },
+      { "step": "자기소개서제출", "start": "2026-04-10", "end": "2026-04-13 15:00", "note": "온라인 제출" },
+      { "step": "면접전형", "start": "2026-04-16", "end": "2026-04-18", "note": "세부일정 및 장소 별도 안내" },
+      { "step": "최종합격자발표", "date": "2026-05-15", "note": "채용 홈페이지 및 문자 통보" },
+      { "step": "입사", "date": "2026-05-26", "note": "세부일정 별도 안내" }
+    ]
+  },
+
+  "posting_tracks": [
+    {
+      "track_name": "대졸수준-일반",
+      "grade": "4직급(나)",
+      "total_positions": 79,
+      "positions": [
+        { "field": "사무", "count": 8 },
+        { "field": "ICT", "count": 7 },
+        { "field": "기계", "count": 25 },
+        { "field": "전기", "count": 21 },
+        { "field": "화학", "count": 7 },
+        { "field": "토목", "count": 4 },
+        { "field": "건축", "count": 7 }
+      ],
+      "work_locations": ["부산(본사)", "하동", "인천", "영월", "안동", "삼척", "세종", "제주"],
+      "work_type": "통상근무 또는 교대근무",
+      "eligibility": {
+        "age": "제한 없음 (단, 만 60세 정년 도달자 지원 불가)",
+        "education": "제한 없음",
+        "language": "제한 없음",
+        "certificate": "제한 없음",
+        "military": "병역법 제76조 병역의무 불이행자 해당하지 않는 자. 현역의 경우 최종합격자 발표일(2026-05-15) 이전에 전역 가능한 자",
+        "special": null,
+        "required_conditions": [],
+        "preferred_conditions": []
+      },
+      "selection_process": [
+        {
+          "stage": 1,
+          "name": "서류심사",
+          "max_score": 100,
+          "details": "외국어성적(50점) + 자격증 가점(최대 50점)",
+          "pass_ratio": "30배수",
+          "tiebreak": "동점자 전원 합격"
+        },
+        {
+          "stage": 2,
+          "name": "필기전형",
+          "pass_ratio": "3배수",
+          "sub_items": [
+            { "name": "인성평가", "type": "적부판정", "details": "직무적합평가(인성), E·F등급 부적합 (A~F등급)" },
+            { "name": "직무능력평가(K-JAT)", "max_score": 100, "details": "직무수행(KOSPO 요구역량) + 직업기초능력" },
+            {
+              "name": "전공기초",
+              "max_score": 100,
+              "details": "사무(상경): 경영일반·경영전략·조직행위론·인적자원관리·마케팅·생산운영관리·재무관리·중급회계·미시경제학·거시경제학 (50문항) / ICT: 컴퓨터구조·운영체제·DB·소프트웨어공학·유무선통신·정보보안개론 / 기계: 재료역학·열역학·유체역학·기계재료·열전달·유공압설계·기계요소설계 / 전기: 전력공학·전기기기·회로이론·제어공학·계측제어시스템·전자회로 / 화학: 일반화학·열역학·유체역학·단위조직·대기환경공학·수질환경공학·폐기물처리공학 / 토목: 응용역학·측량학·수리학및수문학·철근콘크리트및강구조·토질및기초·상하수도공학 / 건축: 건축계획·건축시공·건축구조·건축설비·건축관계법규 (50문항, 대학교 졸업 이상 수준)",
+              "note": "출제수준 대학교 졸업 이상"
+            }
+          ],
+          "note": "가점 제외 필기전형 합계점수가 전체 배점의 40% 미만인 경우 과락",
+          "tiebreak": "동점자 전원 합격"
+        },
+        {
+          "stage": 3,
+          "name": "면접전형(NCS 기반 역량면접)",
+          "max_score": 400,
+          "pass_ratio": "2배수",
+          "sub_items": [
+            { "name": "Presentation", "max_score": 100 },
+            { "name": "Group Discussion", "max_score": 100 },
+            { "name": "실무역량·인성·조직적합성", "max_score": 200 }
+          ],
+          "note": "전체 배점의 60% 미만 득점시 과락 (원점수에 가점 합산 점수 적용). 면접 대상자에 한해 자기소개서 제출",
+          "tiebreak": "보훈 > 장애 > 직무능력평가 > 인성평가 등급 > 전공기초 고득점순"
+        },
+        {
+          "stage": 4,
+          "name": "합격예정자 결정",
+          "pass_ratio": "1배수",
+          "details": "2단계(필기) + 3단계(면접) 성적 합산 고득점순"
+        },
+        {
+          "stage": 5,
+          "name": "신체검사·비위면직자및신원조사",
+          "type": "적부판정",
+          "pass_ratio": "최종합격"
+        }
+      ],
+      "scoring_criteria": {
+        "language_score": {
+          "max": 50,
+          "formula": "(토익환산점수 ÷ 850) × 50",
+          "cap_rule": "850점 이상 시 50점 만점 처리",
+          "accepted_tests": ["TOEIC", "TOEIC Speaking", "OPIc"],
+          "validity_note": "공고 마감일(2026-03-12) 기준 유효기간 미만료 국내정기시험 성적만 인정. 사이버국가고시센터 등록 시 최대 5년 연장 인정"
+        },
+        "certificate_score": {
+          "max": 50
+        }
+      },
+      "bonus_points": [
+        { "type": "등록장애인", "definition": "장애인고용촉진및직업재활법에 의거 장애인 등록자", "document": "면제", "written": "배점의 10%", "interview": "배점의 10%" },
+        { "type": "취업지원대상자", "definition": "국가유공자등예우및지원에관한법률 제31조 채용시험 가점 대상자 (취업지원대상자 증명서 기준, 국가유공자(가족) 확인서 불인정)", "document": "면제", "written": "관련 법령에 따름", "interview": "관련 법령에 따름" },
+        { "type": "고급자격증", "definition": "변호사, 변리사, 회계사(KICPA), 세무사, 노무사, 감정평가사, 건축사, 해당 모집분야 기술사", "document": "면제", "written": "배점의 10%", "interview": null },
+        { "type": "발전소주변지역주민", "definition": "발전소주변지역지원에관한법률 제15조 해당 지역 (하동: 하동군 금성면·금남면·고전면·남해군 고현면·설천면, 착공일 1993-09-14 기준 3년 이상 연속 거주자 및 2대 직계비속 / 삼척: 삼척시 원덕읍, 부지조성공사착수 2011-01-01 기준 3년 이상 연속 거주자 및 2대 직계비속)", "document": null, "written": "배점의 10%", "interview": "배점의 10%" },
+        { "type": "저소득층", "definition": "국민기초생활보장법에 의한 기초생활수급자 및 차상위계층(한부모가정 포함)", "document": null, "written": "배점의 5%", "interview": "배점의 5%" },
+        { "type": "북한이탈주민", "definition": "북한주민의보호및정착지원에관한법률에 의한 북한주민", "document": null, "written": "배점의 5%", "interview": "배점의 5%" },
+        { "type": "다문화가족", "definition": "다문화가족지원법에 따른 다문화가족의 자녀", "document": null, "written": "배점의 5%", "interview": "배점의 5%" },
+        { "type": "자립준비청년", "definition": "아동복지법에 따른 자립준비청년", "document": null, "written": "배점의 5%", "interview": "배점의 5%" },
+        { "type": "경력단절여성", "definition": "출산·육아의 사유로 6개월 이상 경제활동을 중단한 여성", "document": null, "written": "배점의 5%", "interview": "배점의 5%" },
+        { "type": "체험형인턴수료자", "definition": "당사 체험형인턴 수료자 (2021-01-01 이후 수료, 수료 후 3년 이내 1회 한해)", "document": "배점의 5%", "written": null, "interview": null },
+        { "type": "체험형인턴우수수료자", "definition": "당사 체험형인턴 우수 수료자 (2023-01-01 이후 수료, 수료 후 3년 이내 1회 한해)", "document": "배점의 5%", "written": "득점의 5%", "interview": null },
+        { "type": "시간선택제근로자", "definition": "현재 당사 재직자에 한함", "document": "배점의 10%", "written": null, "interview": null }
+      ],
+      "bonus_points_rule": "전형별 가산점은 10% 한도 내 중복 인정. 서류전형 면제 대상자(등록장애인·취업지원대상자·고급자격증)는 당초 합격예정인원 초과 추가합격 가능",
+      "certificate_bonus_table": {
+        "common": [
+          { "category": "한국사", "score": 5, "types": ["한국사능력검정시험 3급 이상"] },
+          { "category": "국어능력", "score": 5, "types": ["국어능력인증 3급", "KBS한국어능력 3+급", "한국실용글쓰기 준2급 이상"] },
+          { "category": "IT능력", "score": 5, "types": ["정보처리기사", "정보처리산업기사", "사무자동화산업기사", "컴퓨터활용능력 1급(대한상공회의소)"], "note": "ICT 지원자는 IT자격증 가점 제외" },
+          { "category": "외국어", "score": 5, "types": ["토익스피킹 AL등급(7등급)", "OPIc AL등급 이상"] }
+        ],
+        "by_field": {
+          "전기": [
+            { "grade": "기사", "score": 10, "types": ["전기", "전기공사", "소방설비(전기분야)", "산업안전", "전자", "신재생에너지발전설비(태양광)"] },
+            { "grade": "산업기사", "score": 5, "types": ["전기", "전기공사", "소방설비(전기분야)", "산업안전", "전자", "신재생에너지발전설비(태양광)"] }
+          ],
+          "기계": [
+            { "grade": "기사", "score": 10, "types": ["일반기계", "에너지관리", "금속재료", "설비보전", "메카트로닉스", "기계설계", "산업안전", "소방설비(기계)", "공조냉동기계", "비파괴검사(전분야)", "용접", "건설기계설비", "건설기계정비", "신재생에너지발전설비(태양광)", "가스", "건설안전"] },
+            { "grade": "산업기사", "score": 5, "types": ["일반기계", "에너지관리", "금속재료", "설비보전", "메카트로닉스", "기계설계", "산업안전", "소방설비(기계)", "공조냉동기계", "비파괴검사(전분야)", "용접", "건설기계설비", "건설기계정비", "신재생에너지발전설비(태양광)", "가스", "건설안전"] }
+          ],
+          "화학": [
+            { "grade": "기사", "score": 10, "types": ["대기환경(대기관리)", "수질환경(수질관리)", "소음진동", "폐기물처리", "화공", "에너지관리", "온실가스관리", "신재생에너지발전설비(태양광)", "토양환경", "위험물", "산업안전", "화학분석", "가스", "환경위해관리"] },
+            { "grade": "산업기사", "score": 5, "types": ["대기환경(대기관리)", "수질환경(수질관리)", "소음진동", "폐기물처리", "화공", "에너지관리", "온실가스관리", "신재생에너지발전설비(태양광)", "토양환경", "위험물", "산업안전", "화학분석", "가스", "환경위해관리"] }
+          ],
+          "토목": [
+            { "grade": "기사", "score": 10, "types": ["토목", "건설재료시험", "측량및지형공간정보", "지적", "콘크리트", "건설안전"] },
+            { "grade": "기사(조경류)", "score": 8, "types": ["조경", "도시계획"] },
+            { "grade": "산업기사", "score": 5, "types": ["토목", "건설재료시험", "측량및지형공간정보", "지적", "콘크리트", "건설안전"] },
+            { "grade": "산업기사(조경)", "score": 3, "types": ["조경"] }
+          ],
+          "건축": [
+            { "grade": "기사", "score": 10, "types": ["건축", "실내건축", "건축설비", "콘크리트", "건설안전"] },
+            { "grade": "기사(조경류)", "score": 8, "types": ["조경", "도시계획"] },
+            { "grade": "산업기사", "score": 5, "types": ["건축", "실내건축", "건축설비", "콘크리트", "건설안전"] },
+            { "grade": "산업기사(조경)", "score": 3, "types": ["조경"] }
+          ],
+          "ICT": [
+            { "grade": "기사", "score": 10, "types": ["정보통신", "무선설비", "전자", "방송통신", "정보보안", "전자계산기", "전자계산기조직응용", "정보처리(관리)"] },
+            { "grade": "산업기사", "score": 5, "types": ["정보통신", "무선설비", "전자", "방송통신", "정보보안", "전자계산기", "전자계산기조직응용", "정보처리(관리)"] }
+          ]
+        },
+        "rules": {
+          "max_certificates": 3,
+          "same_type_rule": "동일종류 자격증은 상위등급 1개만 인정 (예: 전기기사+전기산업기사 보유 시 전기기사만 인정)",
+          "field_restriction": "직무 자격증은 해당 모집단위 내 자격증에만 가점 부여 (예: 전기 지원자가 건축기사 보유 시 가점 미부여)"
+        }
+      },
+      "language_conversion_table": {
+        "toeic_speaking": [
+          { "score": 200, "converted_toeic": 975 },
+          { "score": 190, "converted_toeic": 955 },
+          { "score": 180, "converted_toeic": 932.5 },
+          { "score": 170, "converted_toeic": 907.5 },
+          { "score": 160, "converted_toeic": 875 },
+          { "score": 150, "converted_toeic": 835 },
+          { "score": 140, "converted_toeic": 793.3 },
+          { "score": 130, "converted_toeic": 750 },
+          { "score": 120, "converted_toeic": 700 },
+          { "score": 110, "converted_toeic": 660 }
+        ],
+        "opic": [
+          { "grade": "AL", "converted_toeic": 965 },
+          { "grade": "IH", "converted_toeic": 870 },
+          { "grade": "IM3", "converted_toeic": 820 },
+          { "grade": "IM2", "converted_toeic": 740 },
+          { "grade": "IM1", "converted_toeic": 700 },
+          { "grade": "IL", "converted_toeic": 620 }
+        ],
+        "validity": "공고 마감일(2026-03-12) 기준 유효기간 미만료 국내정기시험 성적만 인정. 국외응시·조회불가·특별시험 성적 불인정. 사이버국가고시센터(gosi.go.kr) 또는 통합채용포털(career.gosi.kr) 등록 시 최대 5년 연장"
+      },
+      "quota_policies": [
+        {
+          "name": "본사 이전지역인재 채용목표제",
+          "target": "부산광역시 소재 학교(대학원 제외) 졸업자 또는 졸업예정자",
+          "rule": "전형별 이전지역인재 합격인원이 선발예정인원의 30% 미달 시, 이전지역인재 불합격자 중 고득점순 추가 선발 (단, 선발예정인원 합격선의 95% 이상인 경우 한해 적용)",
+          "applicable_fields": "분야별 연 채용모집인원 6인 이상 (표시: □)",
+          "note": "대학원 제외한 최종학력 기준"
+        },
+        {
+          "name": "이공계인재 양성평등 채용목표제",
+          "target": "국내 4년제 대학교 자연과학·공학계열 학위 취득자 또는 산업기사 이상 자격 취득자 중 해당 성별",
+          "rule": "직군별 선발예정인원의 20% 미달 시, 이공계 양성평등 채용목표제 적용대상 필기전형 불합격자 중 고득점순 추가 선발(면접 응시기회 부여). (단, 선발예정인원 합격선의 95% 이상인 경우 한해 적용)",
+          "applicable_fields": "신입사원(대졸수준-일반) 기계, 전기"
+        }
+      ]
+    },
+
+    {
+      "track_name": "대졸수준-일반(지역전문)",
+      "grade": "4직급(나)",
+      "total_positions": 4,
+      "positions": [
+        { "field": "기계", "count": 2 },
+        { "field": "전기", "count": 2 }
+      ],
+      "work_locations": ["남제주빛드림본부 (의무근무 5년, 승진 시 관외이동 가능)"],
+      "work_type": "통상근무 또는 교대근무",
+      "eligibility": {
+        "age": "제한 없음 (단, 만 60세 정년 도달자 지원 불가)",
+        "education": "제한 없음",
+        "language": "제한 없음",
+        "certificate": "제한 없음",
+        "military": "병역의무 불이행자 해당하지 않는 자. 현역의 경우 최종합격자 발표일 이전에 전역 가능한 자",
+        "special": null,
+        "required_conditions": [],
+        "preferred_conditions": [],
+        "note": "일반 전형과 별도 전형으로 진행. 원서접수 단계에서 지원전형 선택. 지역전문 선택 시 남제주빛드림본부 의무근무 5년 적용"
+      },
+      "selection_process": "대졸수준-일반과 동일",
+      "scoring_criteria": "대졸수준-일반과 동일",
+      "bonus_points": "대졸수준-일반과 동일",
+      "certificate_bonus_table": "대졸수준-일반과 동일",
+      "language_conversion_table": "대졸수준-일반과 동일",
+      "quota_policies": "대졸수준-일반과 동일"
+    },
+
+    {
+      "track_name": "대졸수준-장애",
+      "grade": "4직급(나)",
+      "total_positions": 6,
+      "positions": [
+        { "field": "사무", "count": 1 },
+        { "field": "기계", "count": 2 },
+        { "field": "전기", "count": 2 },
+        { "field": "화학", "count": 1 }
+      ],
+      "work_locations": ["부산(본사)", "하동", "인천", "영월", "안동", "삼척", "세종", "제주"],
+      "work_type": "통상근무 또는 교대근무",
+      "eligibility": {
+        "age": "제한 없음 (단, 만 60세 정년 도달자 지원 불가)",
+        "education": "제한 없음",
+        "language": "제한 없음",
+        "certificate": "제한 없음",
+        "military": "병역의무 불이행자 해당하지 않는 자. 현역의 경우 최종합격자 발표일 이전에 전역 가능한 자",
+        "special": "장애인고용촉진및직업재활법에 의한 장애인 등록자",
+        "required_conditions": [],
+        "preferred_conditions": []
+      },
+      "selection_process": [
+        { "stage": 1, "name": "서류심사", "details": "서류심사 면제", "pass_ratio": "-" },
+        { "stage": 2, "name": "필기전형", "pass_ratio": "3배수", "sub_items": [
+          { "name": "인성평가", "type": "적부판정" },
+          { "name": "직무능력평가(K-JAT)", "max_score": 100 },
+          { "name": "전공기초", "max_score": 100, "note": "대졸수준-일반과 동일 출제범위" }
+        ], "tiebreak": "동점자 전원 합격" },
+        { "stage": 3, "name": "면접전형(NCS 기반)", "max_score": 400, "pass_ratio": "2배수", "note": "60% 미만 과락", "tiebreak": "보훈 > 직무능력평가 > 인성평가 등급 > 전공기초 고득점순" },
+        { "stage": 4, "name": "합격예정자 결정", "pass_ratio": "1배수", "details": "필기+면접 합산 고득점순" },
+        { "stage": 5, "name": "신체검사·비위면직자및신원조사", "type": "적부판정" }
+      ],
+      "scoring_criteria": null,
+      "bonus_points": "대졸수준-일반과 동일",
+      "certificate_bonus_table": "대졸수준-일반과 동일",
+      "language_conversion_table": "대졸수준-일반과 동일",
+      "quota_policies": "대졸수준-일반과 동일"
+    },
+
+    {
+      "track_name": "대졸수준-보훈",
+      "grade": "4직급(나)",
+      "total_positions": 4,
+      "positions": [
+        { "field": "ICT", "count": 1 },
+        { "field": "기계", "count": 1 },
+        { "field": "전기", "count": 1 },
+        { "field": "화학", "count": 1 }
+      ],
+      "work_locations": ["부산(본사)", "하동", "인천", "영월", "안동", "삼척", "세종", "제주"],
+      "work_type": "통상근무 또는 교대근무",
+      "eligibility": {
+        "age": "제한 없음 (단, 만 60세 정년 도달자 지원 불가)",
+        "education": "제한 없음",
+        "language": "제한 없음",
+        "certificate": "제한 없음",
+        "military": "병역의무 불이행자 해당하지 않는 자. 현역의 경우 최종합격자 발표일 이전에 전역 가능한 자",
+        "special": "국가유공자등예우및지원에관한법률에 의한 취업지원대상자",
+        "required_conditions": [],
+        "preferred_conditions": []
+      },
+      "selection_process": [
+        { "stage": 1, "name": "서류심사", "details": "서류심사 면제", "pass_ratio": "-" },
+        { "stage": 2, "name": "필기전형", "pass_ratio": "3배수", "sub_items": [
+          { "name": "인성평가", "type": "적부판정" },
+          { "name": "직무능력평가(K-JAT)", "max_score": 100 },
+          { "name": "전공기초", "max_score": 100 }
+        ], "tiebreak": "동점자 전원 합격" },
+        { "stage": 3, "name": "면접전형(NCS 기반)", "max_score": 400, "pass_ratio": "2배수", "note": "60% 미만 과락", "tiebreak": "장애 > 직무능력평가 > 인성평가 등급 > 전공기초 고득점순" },
+        { "stage": 4, "name": "합격예정자 결정", "pass_ratio": "1배수" },
+        { "stage": 5, "name": "신체검사·비위면직자및신원조사", "type": "적부판정" }
+      ],
+      "scoring_criteria": null,
+      "bonus_points": "대졸수준-일반과 동일",
+      "certificate_bonus_table": "대졸수준-일반과 동일",
+      "language_conversion_table": "대졸수준-일반과 동일",
+      "quota_policies": "대졸수준-일반과 동일"
+    },
+
+    {
+      "track_name": "고졸수준",
+      "grade": "4직급(다)",
+      "total_positions": 8,
+      "positions": [
+        { "field": "기계", "count": 4 },
+        { "field": "전기", "count": 4 }
+      ],
+      "work_locations": ["부산(본사)", "하동", "인천", "영월", "안동", "삼척", "세종", "제주"],
+      "work_type": "통상근무 또는 교대근무",
+      "eligibility": {
+        "age": "제한 없음 (단, 만 60세 정년 도달자 지원 불가)",
+        "education": "최종학력이 고등학교 졸업 또는 졸업예정인 자. 전문대·대학 졸업자 또는 졸업예정자(최종학기 이수·등록한 자) 지원 불가. 정해진 최종학기 이수 시 학점 부족 등으로 졸업을 못해도 최종학기 이수·등록하였다면 지원 불가. 입사일 전 최종학기 이수·등록 예정자 합격 제외",
+        "language": "제한 없음",
+        "certificate": "제한 없음",
+        "military": "병역의무 불이행자 해당하지 않는 자. 현역의 경우 최종합격자 발표일 이전에 전역 가능한 자",
+        "special": null,
+        "required_conditions": [],
+        "preferred_conditions": []
+      },
+      "selection_process": [
+        {
+          "stage": 1,
+          "name": "서류심사",
+          "max_score": 20,
+          "details": "자격증 가점(최대 20점)",
+          "pass_ratio": "30배수",
+          "tiebreak": "동점자 전원 합격"
+        },
+        {
+          "stage": 2,
+          "name": "필기전형",
+          "pass_ratio": "3배수",
+          "sub_items": [
+            { "name": "인성평가", "type": "적부판정" },
+            { "name": "직무능력평가(K-JAT)", "max_score": 100, "details": "의사소통능력, 수리능력, 문제해결능력, 자원관리능력, 직업윤리 (70문항)" },
+            { "name": "전공기초", "max_score": 100, "details": "기계: 기계일반 / 전기: 전기일반 (50문항, 기능사 수준)" }
+          ],
+          "note": "가점 제외 합계점수 40% 미만 과락",
+          "tiebreak": "동점자 전원 합격"
+        },
+        { "stage": 3, "name": "면접전형(NCS 기반)", "max_score": 400, "pass_ratio": "2배수", "note": "60% 미만 과락", "tiebreak": "보훈 > 장애 > 직무능력평가 > 인성평가 등급 > 전공기초 고득점순" },
+        { "stage": 4, "name": "합격예정자 결정", "pass_ratio": "1배수" },
+        { "stage": 5, "name": "신체검사·비위면직자및신원조사", "type": "적부판정" }
+      ],
+      "scoring_criteria": {
+        "language_score": null,
+        "certificate_score": { "max": 20 }
+      },
+      "bonus_points": "대졸수준-일반과 동일",
+      "certificate_bonus_table": {
+        "common": [
+          { "category": "한국사", "score": 5, "types": ["한국사능력검정시험 3급 이상"] }
+        ],
+        "by_field": {
+          "전기": [
+            { "grade": "기능사 이상", "score": 5, "types": ["전기", "전기공사", "소방설비(전기분야)", "산업안전", "전자", "신재생에너지발전설비(태양광)"] }
+          ],
+          "기계": [
+            { "grade": "기능사 이상", "score": 5, "types": ["일반기계", "에너지관리", "금속재료", "설비보전", "메카트로닉스", "기계설계", "산업안전", "소방설비(기계)", "공조냉동기계", "비파괴검사(전분야)", "용접", "건설기계설비", "건설기계정비", "신재생에너지발전설비(태양광)", "가스", "건설안전"] }
+          ]
+        },
+        "rules": {
+          "max_certificates": 3,
+          "same_type_rule": "상위등급 1개만 인정"
+        }
+      },
+      "language_conversion_table": null,
+      "quota_policies": "대졸수준-일반과 동일"
+    },
+
+    {
+      "track_name": "별정직-기술담당원(하동)",
+      "grade": "6직급",
+      "total_positions": 1,
+      "positions": [
+        { "field": "기술담당원(폐기물관리원)", "count": 1 }
+      ],
+      "work_locations": ["하동빛드림본부 (고정)"],
+      "work_type": "통상근무",
+      "eligibility": {
+        "age": "제한 없음 (단, 만 60세 정년 도달자 지원 불가)",
+        "education": "제한 없음",
+        "language": "제한 없음",
+        "certificate": "제한 없음",
+        "military": "병역의무 불이행자 해당하지 않는 자. 현역의 경우 최종합격자 발표일 이전에 전역 가능한 자",
+        "special": null,
+        "required_conditions": ["지원 모집단위 근무지역(하동) 출퇴근 가능자"],
+        "preferred_conditions": [
+          "폐기물·환경·가스 관련 자격증 보유자",
+          "해당 자격증 종류: 폐기물처리기술사, 폐기물처리기사, 폐기물처리산업기사, 수질관리기술사, 수질환경기사, 수질환경산업기사, 대기관리기술사, 대기환경기사, 대기환경산업기사, 가스기술사, 가스기능장, 가스기사, 가스산업기사, 가스기능사"
+        ],
+        "note": "우대사항은 면접전형 시 정성적 평가요소로 활용"
+      },
+      "selection_process": [
+        {
+          "stage": 1,
+          "name": "서류심사",
+          "details": "직무능력기반 지원서 심사 (KOSPO 핵심가치에 따른 지원서 심사)",
+          "pass_ratio": "30배수",
+          "tiebreak": "동점자 전원 합격"
+        },
+        {
+          "stage": 2,
+          "name": "필기전형",
+          "pass_ratio": "3배수",
+          "sub_items": [
+            { "name": "인성검사", "type": "적부판정", "details": "E·F등급 부적합" },
+            { "name": "직무능력평가(K-JAT)", "max_score": 100, "details": "고졸수준: 의사소통능력, 문제해결능력, 자원관리능력, 직업윤리 (70문항)" }
+          ],
+          "note": "가점 제외 합계점수 40% 미만 과락",
+          "tiebreak": "동점자 전원 합격"
+        },
+        {
+          "stage": 3,
+          "name": "면접전형",
+          "max_score": 200,
+          "pass_ratio": "3배수",
+          "details": "NCS 경험, 상황대응, 인성 및 조직적합성",
+          "note": "배점의 60% 미만 득점시 과락",
+          "tiebreak": "보훈 > 장애 > 직무능력평가 > 인성평가 등급 고득점순"
+        },
+        {
+          "stage": 4,
+          "name": "합격예정자 결정",
+          "pass_ratio": "1배수",
+          "details": "필기+면접 합산 고득점순"
+        },
+        {
+          "stage": 5,
+          "name": "신체검사·비위면직자및신원조사",
+          "type": "적부판정"
+        }
+      ],
+      "scoring_criteria": null,
+      "bonus_points": [
+        { "type": "등록장애인", "document": "면제", "written": "배점의 10%", "interview": "배점의 10%" },
+        { "type": "취업지원대상자", "document": "면제", "written": "관련 법령에 따름", "interview": "관련 법령에 따름" },
+        { "type": "발전소주변지역주민", "document": null, "written": "배점의 10%", "interview": "배점의 10%" },
+        { "type": "저소득층", "document": null, "written": "배점의 5%", "interview": "배점의 5%" },
+        { "type": "북한이탈주민", "document": null, "written": "배점의 5%", "interview": "배점의 5%" },
+        { "type": "다문화가족", "document": null, "written": "배점의 5%", "interview": "배점의 5%" },
+        { "type": "자립준비청년", "document": null, "written": "배점의 5%", "interview": "배점의 5%" },
+        { "type": "시간선택제근로자", "document": "배점의 10%", "written": null, "interview": null },
+        { "type": "경력단절여성", "definition": "출산·육아의 사유로 6개월 이상 경제활동을 중단한 여성", "document": null, "written": "배점의 5%", "interview": "배점의 5%" }
+      ],
+      "bonus_points_rule": "전형별 가산점은 10% 한도 내 중복 인정. 고급자격증·체험형인턴 가점 항목 없음",
+      "certificate_bonus_table": null,
+      "language_conversion_table": null,
+      "quota_policies": null
+    }
+  ]
+}
