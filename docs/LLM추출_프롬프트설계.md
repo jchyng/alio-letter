@@ -5,6 +5,10 @@
 채용공고 PDF를 LLM에 넘겨서 구조화된 JSON으로 추출한다.
 기관마다 PDF 포맷이 다르므로, **규칙 기반 파싱이 아닌 LLM 기반 추출**이 핵심.
 
+> **역할 분리**: Gemini는 비구조화 문서 → 구조화 JSON 변환만 담당.
+> `posting_url`, `file_urls`는 스크래퍼가 수집하여 DB에 먼저 저장한다.
+> Gemini 출력에 이 두 필드는 포함하지 않는다.
+
 ---
 
 ## LLM 선택 기준
@@ -17,155 +21,171 @@
 | 비용 | 공고 1건당 비용이 합리적 |
 | 멀티모달 | PDF 이미지 직접 처리 가능하면 유리 |
 
-**후보:** Gemini 2.5 Pro (100만 토큰 컨텍스트), Claude Sonnet/Opus, GPT-4o
+**선택:** Gemini 2.5 Flash (100만 토큰 컨텍스트, 비용 효율)
 
 ---
 
-## 추출 JSON 스키마
+## 출력 JSON 스키마
 
-LLM에게 아래 스키마에 맞춰 JSON을 출력하라고 지시한다.
+> DB 테이블 필드명과 1:1 매핑. 변환 레이어 없이 DB에 직접 저장 가능.
 
 ```json
 {
-  "posting_meta": {
-    "institution_name": "한국남부발전(주)",
-    "posting_number": "채용공고 2026-01호",
-    "title": "2026년 상반기 신입사원 및 별정직 채용공고",
-    "posted_date": "2026-02-23",
-    "application_start": "2026-03-01",
-    "application_end": "2026-03-12",
-    "total_headcount": 102
+  "postings_update": {
+    "total_positions": 102,
+    "positions_summary": [
+      { "field": "사무", "total": 9, "by_track": { "일반": 8, "장애": 1 } },
+      { "field": "전기", "total": 30, "by_track": { "일반": 21, "지역전문": 2, "장애": 2, "보훈": 1, "고졸": 4 } }
+    ],
+    "schedule": [
+      { "step": "지원서접수", "start": "2026-03-03", "end": "2026-03-12", "note": "온라인 접수" },
+      { "step": "필기전형", "date": "2026-04-05", "note": "서울 또는 부산" },
+      { "step": "최종합격자발표", "date": "2026-05-15" }
+    ]
   },
 
-  "sections": [
+  "posting_tracks": [
     {
-      "section_name": "신입사원 (대졸수준-일반)",
-      "recruitment_type": "일반",
-      "education_level": "대졸수준",
+      "track_name": "대졸수준-일반",
       "grade": "4직급(나)",
-      "probation_months": 3,
-      "work_locations": ["부산", "하동", "인천", "제주", "영월", "안동", "삼척", "세종"],
-      "work_type": "통상근무 혹은 교대근무",
-
-      "units": [
-        {"job_field": "사무", "headcount": 8},
-        {"job_field": "ICT", "headcount": 7},
-        {"job_field": "발전-기계", "headcount": 25},
-        {"job_field": "발전-전기", "headcount": 21},
-        {"job_field": "화학", "headcount": 7},
-        {"job_field": "토목", "headcount": 4},
-        {"job_field": "건축", "headcount": 7}
+      "total_positions": 79,
+      "positions": [
+        { "field": "사무", "count": 8 },
+        { "field": "ICT", "count": 7 },
+        { "field": "전기", "count": 21 }
       ],
+      "work_locations": ["부산(본사)", "하동", "인천", "영월"],
+      "work_type": "통상근무 또는 교대근무",
 
-      "qualifications": {
-        "age_limit": "제한 없음 (정년 만60세)",
-        "education_req": "제한 없음",
-        "certificate_req": "제한 없음",
-        "language_req": "제한 없음",
-        "military_req": "병역의무 불이행자 제외",
-        "disability_req": null,
-        "veteran_req": null,
-        "other_req": null,
-        "preferred_certs": null
+      "eligibility": {
+        "age": "제한 없음 (만 60세 미만)",
+        "education": "제한 없음",
+        "language": "제한 없음",
+        "certificate": "제한 없음",
+        "military": "병역의무 불이행자 해당하지 않는 자. 현역의 경우 최종합격자 발표일 이전 전역 가능한 자",
+        "special": null,
+        "required_conditions": [],
+        "preferred_conditions": []
       },
 
-      "selection_stages": [
+      "selection_process": [
         {
-          "stage_number": 1,
-          "stage_name": "서류심사",
-          "pass_ratio": "30배수",
+          "stage": 1,
+          "name": "서류심사",
           "max_score": 100,
-          "details": "외국어성적(50점) + 자격증가점(최대 50점)",
-          "sub_items": [
-            {"name": "외국어성적", "max_score": 50, "formula": "(토익환산점수÷850)×50, 850이상 만점"},
-            {"name": "자격증가점", "max_score": 50, "note": "별첨 6 참고"}
-          ]
+          "details": "외국어성적(50점) + 자격증 가점(최대 50점)",
+          "pass_ratio": "30배수",
+          "tiebreak": "동점자 전원 합격"
         },
         {
-          "stage_number": 2,
-          "stage_name": "필기전형(기초지식평가)",
+          "stage": 2,
+          "name": "필기전형",
           "pass_ratio": "3배수",
-          "max_score": 200,
-          "details": "인성평가(적부) + 직무능력(100) + 전공기초(100)",
           "sub_items": [
-            {"name": "인성평가", "max_score": null, "note": "E,F등급 부적합 (적부판정)"},
-            {"name": "직무능력평가(K-JAT)", "max_score": 100, "note": "직무수행+직업기초능력"},
-            {"name": "전공기초-사무(상경)", "max_score": 100, "note": "경제학,회계학,경영학 50문항"},
-            {"name": "전공기초-기술", "max_score": 100, "note": "지원분야 기사 수준 50문항"}
-          ]
+            { "name": "인성평가", "type": "적부판정", "details": "E·F등급 부적합" },
+            { "name": "직무능력평가(K-JAT)", "max_score": 100 },
+            { "name": "전공기초", "max_score": 100, "details": "지원분야별 상이" }
+          ],
+          "note": "가점 제외 합계 40% 미만 과락",
+          "tiebreak": "동점자 전원 합격"
         },
         {
-          "stage_number": 3,
-          "stage_name": "면접전형(NCS기반 역량면접)",
-          "pass_ratio": "2배수",
+          "stage": 3,
+          "name": "면접전형(NCS 기반 역량면접)",
           "max_score": 400,
-          "details": "Presentation(100)+GD(100)+인성·조직적합성(200)",
+          "pass_ratio": "2배수",
           "sub_items": [
-            {"name": "Presentation", "max_score": 100},
-            {"name": "Group Discussion", "max_score": 100},
-            {"name": "인성 및 조직적합성", "max_score": 200}
+            { "name": "Presentation", "max_score": 100 },
+            { "name": "Group Discussion", "max_score": 100 },
+            { "name": "실무역량·인성·조직적합성", "max_score": 200 }
+          ],
+          "note": "60% 미만 과락",
+          "tiebreak": "보훈 > 장애 > 직무능력평가 > 인성평가 등급 > 전공기초 고득점순"
+        },
+        {
+          "stage": 4,
+          "name": "합격예정자 결정",
+          "details": "필기+면접 합산 고득점순"
+        },
+        {
+          "stage": 5,
+          "name": "신체검사·비위면직자및신원조사",
+          "type": "적부판정"
+        }
+      ],
+
+      "scoring_criteria": {
+        "language_score": {
+          "max": 50,
+          "formula": "(토익환산점수 ÷ 850) × 50",
+          "cap_rule": "850점 이상 시 50점 만점",
+          "accepted_tests": ["TOEIC", "TOEIC Speaking", "OPIc"],
+          "validity_note": "공고 마감일 기준 유효기간 미만료 국내정기시험 성적만 인정"
+        },
+        "certificate_score": { "max": 50 }
+      },
+
+      "bonus_points": [
+        {
+          "type": "등록장애인",
+          "definition": "장애인고용촉진및직업재활법에 의거 장애인 등록자",
+          "document": "면제",
+          "written": "배점의 10%",
+          "interview": "배점의 10%"
+        },
+        {
+          "type": "취업지원대상자",
+          "definition": "국가유공자등예우및지원에관한법률 제31조 채용시험 가점 대상자",
+          "document": "면제",
+          "written": "관련 법령에 따름",
+          "interview": "관련 법령에 따름"
+        }
+      ],
+
+      "bonus_points_rule": "전형별 가산점은 10% 한도 내 중복 인정. 서류전형 면제 대상자는 합격예정인원 초과 추가합격 가능",
+
+      "certificate_bonus_table": {
+        "common": [
+          { "category": "한국사", "score": 5, "types": ["한국사능력검정시험 3급 이상"] }
+        ],
+        "by_field": {
+          "전기": [
+            { "grade": "기사", "score": 10, "types": ["전기", "전기공사", "소방설비(전기분야)"] },
+            { "grade": "산업기사", "score": 5, "types": ["전기", "전기공사", "소방설비(전기분야)"] }
           ]
         },
+        "rules": {
+          "max_certificates": 3,
+          "same_type_rule": "동일종류 자격증은 상위등급 1개만 인정",
+          "field_restriction": "직무 자격증은 해당 모집단위 분야 자격증에만 가점 부여. 예: 전기 지원자가 건축기사 보유 시 미부여"
+        }
+      },
+
+      "language_conversion_table": {
+        "toeic_speaking": [
+          { "score": 200, "converted_toeic": 975 },
+          { "score": 190, "converted_toeic": 955 }
+        ],
+        "opic": [
+          { "grade": "AL", "converted_toeic": 965 },
+          { "grade": "IH", "converted_toeic": 870 }
+        ],
+        "validity": "공고 마감일 기준 유효기간 미만료 성적만 인정"
+      },
+
+      "quota_policies": [
         {
-          "stage_number": 4,
-          "stage_name": "합격예정자 결정",
-          "pass_ratio": "1배수",
-          "max_score": null,
-          "details": "필기+면접 합산 고득점순",
-          "sub_items": null
-        },
-        {
-          "stage_number": 5,
-          "stage_name": "신체검사, 비위면직자 및 신원조사",
-          "pass_ratio": "최종합격",
-          "max_score": null,
-          "details": "적부판정",
-          "sub_items": null
+          "name": "본사 이전지역인재 채용목표제",
+          "target": "부산광역시 소재 학교 졸업자 또는 졸업예정자 (대학원 제외)",
+          "rule": "전형별 30% 미달 시 고득점순 추가 선발"
         }
       ]
-    },
-    {
-      "section_name": "신입사원 (대졸수준-장애)",
-      "recruitment_type": "장애",
-      "education_level": "대졸수준",
-      "...": "구조 동일, 내용만 다름 (서류면제 등)"
-    }
-  ],
-
-  "bonus_points": [
-    {
-      "bonus_type": "등록장애인",
-      "description": "장애인고용촉진 및 직업재활법에 의한 장애인 등록자",
-      "document_effect": "면제",
-      "written_effect": "배점의 10%",
-      "interview_effect": "배점의 10%",
-      "max_cumulative_pct": 10,
-      "required_docs": "장애인 증빙서류"
-    },
-    {
-      "bonus_type": "취업지원대상자",
-      "description": "국가유공자 등 예우 및 지원에 관한 법률 제31조",
-      "document_effect": "면제",
-      "written_effect": "관련법령에 따름",
-      "interview_effect": "관련법령에 따름",
-      "max_cumulative_pct": 10,
-      "required_docs": "취업지원대상자 증빙서류"
-    }
-  ],
-
-  "recruitment_targets": [
-    {
-      "target_type": "이전지역인재",
-      "description": "부산광역시 소재 학교 졸업자 또는 졸업예정자",
-      "target_rate_pct": 30,
-      "applicable_fields": ["사무", "ICT", "발전-기계", "발전-전기", "화학", "토목", "건축"],
-      "conditions": "분야별 연 채용모집인원 6인 이상"
     }
   ],
 
   "validation": {
-    "total_headcount_check": 102,
-    "units_sum": 102,
+    "total_positions_check": 102,
+    "tracks_sum": 102,
     "match": true
   }
 }
@@ -178,30 +198,43 @@ LLM에게 아래 스키마에 맞춰 JSON을 출력하라고 지시한다.
 ```
 당신은 공기업 채용공고 PDF에서 구조화된 데이터를 추출하는 전문가입니다.
 
-아래 규칙을 정확히 따르세요:
+아래 규칙을 반드시 따르세요:
 
-1. PDF에 포함된 모든 채용구분 섹션을 빠짐없이 추출하세요.
-   - 대졸-일반, 대졸-장애, 대졸-보훈, 고졸, 별정직 등 모든 섹션
-   - 각 섹션의 지원자격, 전형방법은 서로 다를 수 있으므로 각각 추출
+[필수 규칙]
 
-2. "선발분야 및 인원" 피벗 테이블을 행 단위로 변환하세요.
-   - 인원이 0이거나 빈칸인 셀은 제외
-   - 모든 행의 headcount 합계가 총 채용인원과 일치해야 합니다
+1. 모든 채용 트랙을 빠짐없이 추출하세요.
+   대졸-일반, 대졸-지역전문, 대졸-장애, 대졸-보훈, 고졸, 별정직 등
+   공고에 등장하는 모든 트랙을 각각 독립된 객체로 출력하세요.
 
-3. 전형 단계별 세부사항을 정확히 추출하세요.
-   - 배점, 배수, 산식(formula)이 있으면 포함
-   - 인성평가 같은 적부판정 항목도 포함
+2. 절대로 "동일", "위와 같음", "상동", "대졸수준-일반과 동일" 같은
+   참조 표현을 사용하지 마세요.
+   다른 트랙과 내용이 같더라도 반드시 실제 데이터를 그대로 복사하여 출력하세요.
+   JSON 필드 값이 문자열 참조가 되어서는 안 됩니다.
 
-4. 가점 항목은 서류/필기/면접 각 단계별 효과를 구분하세요.
-   - "면제", "배점의 N%", "관련법령에 따름", null 중 하나
+3. "선발분야 및 인원" 피벗 테이블을 행 단위로 변환하세요.
+   인원이 0이거나 빈칸인 셀은 제외하세요.
+   모든 트랙의 total_positions 합계 == postings_update.total_positions 이어야 합니다.
 
-5. 날짜는 YYYY-MM-DD 형식으로 통일하세요.
+4. 전형 단계별 세부사항을 정확히 추출하세요.
+   배점, 배수, 산식, 동점자 처리 기준(tiebreak)이 있으면 모두 포함하세요.
+   인성평가 같은 적부판정 항목도 sub_items에 포함하세요.
 
-6. 추출 결과를 검증하세요:
-   - units의 headcount 합계 == total_headcount
-   - 각 section에 최소 1개 이상의 selection_stage 존재
+5. 가점 항목은 서류(document)/필기(written)/면접(interview) 각 단계별 효과를 구분하세요.
+   가능한 값: "면제", "배점의 N%", "득점의 N%", "관련 법령에 따름", null
+   각 항목의 자격 조건 원문(definition)도 함께 추출하세요.
+   가점 중복 한도 규칙이 있으면 bonus_points_rule에 기록하세요.
 
-반드시 아래 JSON 스키마에 맞춰 출력하세요. 다른 텍스트 없이 JSON만 출력하세요.
+6. certificate_bonus_table의 rules에 field_restriction(직무 자격증 교차 가점 제한 규칙)이
+   명시되어 있으면 반드시 포함하세요.
+
+7. scoring_criteria.language_score에 유효기간 조건이 있으면 validity_note에 기록하세요.
+
+8. 날짜는 YYYY-MM-DD 형식으로 통일하세요.
+   마감 시각이 있으면 YYYY-MM-DD HH:MM:SS 형식으로 기록하세요.
+
+9. posting_url과 file_urls는 출력하지 마세요. (스크래퍼가 별도 수집)
+
+10. 반드시 아래 JSON 스키마에 맞춰 출력하세요. JSON 외 다른 텍스트는 출력하지 마세요.
 ```
 
 ---
@@ -210,19 +243,21 @@ LLM에게 아래 스키마에 맞춰 JSON을 출력하라고 지시한다.
 
 ```
 1. JSON 파싱 성공 여부
-2. posting_meta 필수 필드 null 체크
-3. sections 배열이 1개 이상인지
-4. 각 section에 units, qualifications, selection_stages 존재 여부
-5. 전체 units headcount 합계 == total_headcount
-6. 합계 불일치 시 → 수동 검토 큐에 넣기
-7. 검증 통과 시 → DB 분산 저장
+2. postings_update 필수 필드 null 체크
+3. posting_tracks 배열이 1개 이상인지
+4. 각 트랙에 eligibility, selection_process 존재 여부
+5. 모든 트랙 total_positions 합계 == postings_update.total_positions
+6. bonus_points, certificate_bonus_table 필드가 문자열인 트랙 없는지 검사
+   → "동일" 참조 문자열 감지 시 parse_status = 'failed' 처리
+7. 합계 불일치 시 → parse_status = 'partial', 수동 검토 큐
+8. 검증 통과 시 → DB 저장
 ```
 
 ---
 
-## 비용 추정 (Gemini 2.5 Pro 기준)
+## 비용 추정 (Gemini 2.5 Flash 기준)
 
 - 공고 PDF 평균 20페이지 ≈ 약 8,000~15,000 토큰 (입력)
 - JSON 출력 ≈ 약 3,000~5,000 토큰
-- 1건당 비용: 약 $0.01~0.03
-- 월 100건 공고 처리 시: 약 $1~3
+- 1건당 비용: 약 $0.003~0.008
+- 월 100건 공고 처리 시: 약 $0.3~0.8
