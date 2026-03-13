@@ -132,7 +132,32 @@ CREATE TABLE IF NOT EXISTS recruitment_targets (
   FOREIGN KEY (posting_id) REFERENCES job_postings(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 10. users (사용자)
+-- 10. posting_tracks (공고 트랙별 파싱 결과)
+-- 1개 공고 = N개 채용 트랙 (예: 대졸일반·대졸장애·고졸·별정직 등)
+-- 자격증 가점 기준(certificate_bonus_table), 어학환산표, 배점 기준 등
+-- 공고마다 다를 수 있는 규칙을 트랙 단위로 저장한다.
+CREATE TABLE IF NOT EXISTS posting_tracks (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  posting_id INT NOT NULL,
+  track_name VARCHAR(50) NOT NULL,              -- 채용유형명 (예: 대졸수준-일반)
+  grade VARCHAR(30),                            -- 채용직급
+  positions JSON,                               -- 모집분야별 인원 {field, headcount}[]
+  total_positions INT,                          -- 해당 트랙 총 채용인원
+  work_locations JSON,                          -- 근무지역 상세
+  work_type VARCHAR(50),                        -- 근무형태
+  eligibility JSON,                             -- 지원자격 조건
+  selection_process JSON,                       -- 전형절차 및 배점
+  scoring_criteria JSON,                        -- 서류심사 점수 산출 기준 (어학 max, 공식 등)
+  certificate_bonus_table JSON,                 -- 자격증 가점 세부 기준 (공고마다 다름)
+  language_conversion_table JSON,               -- 어학성적 환산 기준 (공고마다 다름)
+  bonus_points JSON,                            -- 가점 항목 및 전형별 배점률
+  bonus_points_rule VARCHAR(500),               -- 가점 중복 한도 등 공고별 가점 운영 규칙
+  quota_policies JSON,                          -- 채용목표제
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (posting_id) REFERENCES job_postings(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 11. users (사용자)
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(200) UNIQUE NOT NULL,
