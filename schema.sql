@@ -1,184 +1,155 @@
--- 1. institutions (기관)
-CREATE TABLE IF NOT EXISTS institutions (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(200) NOT NULL,
-  alio_id VARCHAR(50) UNIQUE,
-  category VARCHAR(100),
-  headquarters VARCHAR(100),
-  website_url VARCHAR(500),
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- =============================================================
+-- Alio Letter — DB Schema
+-- =============================================================
+-- 단계별 적용:
+--   Phase 1 (크롤링):         postings
+--   Phase 2 (Gemini 파싱):    posting_tracks
+--   Phase 3 (매칭·분석):      users, user_preferences, user_specs,
+--                              user_certificates, user_posting_analyses
+-- =============================================================
 
--- 2. salary_info (급여정보)
-CREATE TABLE IF NOT EXISTS salary_info (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  institution_id INT,
-  fiscal_year INT,
-  employment_type VARCHAR(50),
-  base_salary INT,
-  fixed_allowance INT,
-  performance_allowance INT,
-  bonus INT,
-  avg_annual_salary INT,
-  avg_salary_male INT,
-  avg_salary_female INT,
-  headcount DECIMAL(10,1),
-  avg_tenure_months INT,
-  source_url VARCHAR(500),
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_salary (institution_id, fiscal_year, employment_type),
-  FOREIGN KEY (institution_id) REFERENCES institutions(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 3. job_postings (채용공고)
-CREATE TABLE IF NOT EXISTS job_postings (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  institution_id INT,
-  posting_number VARCHAR(100),
-  title VARCHAR(500),
-  posted_date DATE,
-  application_start DATE,
-  application_end DATE,
-  total_headcount INT,
-  source_url VARCHAR(500),
-  pdf_url VARCHAR(500),
-  ai_summary TEXT,
-  status VARCHAR(20) DEFAULT 'active',
-  raw_extracted_data JSON,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (institution_id) REFERENCES institutions(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- ─────────────────────────────────────────
+-- Phase 1: 크롤링
+-- ─────────────────────────────────────────
 
--- 4. recruitment_sections (채용구분 섹션)
-CREATE TABLE IF NOT EXISTS recruitment_sections (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  posting_id INT,
-  section_name VARCHAR(200),
-  recruitment_type VARCHAR(50),
-  education_level VARCHAR(50),
-  grade VARCHAR(50),
-  probation_months INT,
-  work_locations JSON,
-  work_type VARCHAR(50),
-  section_order INT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (posting_id) REFERENCES job_postings(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS postings (
+  posting_id        INT           AUTO_INCREMENT PRIMARY KEY,
+  alio_id           VARCHAR(20)   NOT NULL UNIQUE,
+  title             VARCHAR(200)  NOT NULL,
+  org_name          VARCHAR(100)  NOT NULL,
+  org_type          VARCHAR(50)   NULL,     -- 잡알리오 페이지에서 직접 노출 안 됨, 추후 보완
+  regions           JSON          NOT NULL,
+  job_fields        JSON          NOT NULL,
+  employment_types  JSON          NOT NULL,
+  recruit_types     JSON          NOT NULL,
+  education_levels  JSON          NOT NULL,
+  positions_summary JSON,
+  total_positions   INT,
+  posting_url       VARCHAR(500)  NOT NULL,
+  file_urls         JSON,
+  posted_date       DATE          NOT NULL,
+  deadline          DATETIME      NOT NULL,
+  schedule          JSON,
+  parse_status      ENUM('pending','done','partial','failed','no_file') NOT NULL DEFAULT 'pending',
+  status            ENUM('진행중','마감') NOT NULL DEFAULT '진행중',
+  created_at        DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 5. recruitment_units (직무별 채용인원)
-CREATE TABLE IF NOT EXISTS recruitment_units (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  section_id INT,
-  posting_id INT,
-  job_field VARCHAR(100) NOT NULL,
-  headcount INT NOT NULL,
-  note TEXT,
-  FOREIGN KEY (section_id) REFERENCES recruitment_sections(id),
-  FOREIGN KEY (posting_id) REFERENCES job_postings(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 6. qualification_requirements (지원자격)
-CREATE TABLE IF NOT EXISTS qualification_requirements (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  section_id INT,
-  age_limit VARCHAR(100),
-  education_req VARCHAR(100),
-  certificate_req TEXT,
-  language_req TEXT,
-  military_req VARCHAR(200),
-  disability_req VARCHAR(200),
-  veteran_req VARCHAR(200),
-  other_req TEXT,
-  preferred_certs TEXT,
-  FOREIGN KEY (section_id) REFERENCES recruitment_sections(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- ─────────────────────────────────────────
+-- Phase 2: Gemini PDF 파싱
+-- ─────────────────────────────────────────
 
--- 7. selection_stages (전형 단계)
-CREATE TABLE IF NOT EXISTS selection_stages (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  section_id INT,
-  stage_number INT,
-  stage_name VARCHAR(100),
-  details TEXT,
-  pass_ratio VARCHAR(50),
-  max_score INT,
-  sub_items JSON,
-  FOREIGN KEY (section_id) REFERENCES recruitment_sections(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 8. bonus_points (가점 항목)
-CREATE TABLE IF NOT EXISTS bonus_points (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  posting_id INT,
-  bonus_type VARCHAR(100),
-  description TEXT,
-  document_effect VARCHAR(100),
-  written_effect VARCHAR(100),
-  interview_effect VARCHAR(100),
-  max_cumulative_pct INT,
-  required_docs TEXT,
-  FOREIGN KEY (posting_id) REFERENCES job_postings(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 9. recruitment_targets (채용목표제)
-CREATE TABLE IF NOT EXISTS recruitment_targets (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  posting_id INT,
-  target_type VARCHAR(100),
-  description TEXT,
-  target_rate_pct INT,
-  applicable_fields TEXT,
-  conditions TEXT,
-  FOREIGN KEY (posting_id) REFERENCES job_postings(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 10. posting_tracks (공고 트랙별 파싱 결과)
--- 1개 공고 = N개 채용 트랙 (예: 대졸일반·대졸장애·고졸·별정직 등)
--- 자격증 가점 기준(certificate_bonus_table), 어학환산표, 배점 기준 등
--- 공고마다 다를 수 있는 규칙을 트랙 단위로 저장한다.
 CREATE TABLE IF NOT EXISTS posting_tracks (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  posting_id INT NOT NULL,
-  track_name VARCHAR(50) NOT NULL,              -- 채용유형명 (예: 대졸수준-일반)
-  grade VARCHAR(30),                            -- 채용직급
-  positions JSON,                               -- 모집분야별 인원 {field, headcount}[]
-  total_positions INT,                          -- 해당 트랙 총 채용인원
-  work_locations JSON,                          -- 근무지역 상세
-  work_type VARCHAR(50),                        -- 근무형태
-  eligibility JSON,                             -- 지원자격 조건
-  selection_process JSON,                       -- 전형절차 및 배점
-  scoring_criteria JSON,                        -- 서류심사 점수 산출 기준 (어학 max, 공식 등)
-  certificate_bonus_table JSON,                 -- 자격증 가점 세부 기준 (공고마다 다름)
-  language_conversion_table JSON,               -- 어학성적 환산 기준 (공고마다 다름)
-  bonus_points JSON,                            -- 가점 항목 및 전형별 배점률
-  bonus_points_rule VARCHAR(500),               -- 가점 중복 한도 등 공고별 가점 운영 규칙
-  quota_policies JSON,                          -- 채용목표제
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (posting_id) REFERENCES job_postings(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  track_id                  INT         AUTO_INCREMENT PRIMARY KEY,
+  posting_id                INT         NOT NULL,
+  track_name                VARCHAR(50) NOT NULL,
+  grade                     VARCHAR(30),
+  positions                 JSON        NOT NULL,
+  total_positions           INT         NOT NULL,
+  work_locations            JSON,
+  work_type                 VARCHAR(50),
+  eligibility               JSON        NOT NULL,
+  selection_process         JSON        NOT NULL,
+  scoring_criteria          JSON,
+  bonus_points              JSON,
+  certificate_bonus_table   JSON,
+  language_conversion_table JSON,
+  quota_policies            JSON,
+  bonus_points_rule         VARCHAR(500),
+  FOREIGN KEY (posting_id) REFERENCES postings(posting_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 11. users (사용자)
+
+-- ─────────────────────────────────────────
+-- Phase 3: 사용자 · 매칭 · 분석
+-- ─────────────────────────────────────────
+
 CREATE TABLE IF NOT EXISTS users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  email VARCHAR(200) UNIQUE NOT NULL,
-  name VARCHAR(100),
-  is_active TINYINT DEFAULT 0,
-  education_level VARCHAR(50),
-  military_status VARCHAR(20),
-  is_disabled TINYINT DEFAULT 0,
-  is_veteran_family TINYINT DEFAULT 0,
-  is_low_income TINYINT DEFAULT 0,
-  is_north_defector TINYINT DEFAULT 0,
-  is_multicultural TINYINT DEFAULT 0,
-  is_self_reliance TINYINT DEFAULT 0,
-  residence_region VARCHAR(20),
-  toeic_score INT,
-  toeic_speaking_level VARCHAR(10),
-  opic_level VARCHAR(10),
-  certificates JSON,
-  preferred_fields JSON,
-  preferred_regions JSON,
-  preferred_types JSON,
-  preferred_institutions JSON,
-  synced_at DATETIME
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  user_id                 INT          AUTO_INCREMENT PRIMARY KEY,
+  name                    VARCHAR(50)  NOT NULL,
+  email                   VARCHAR(100) NOT NULL UNIQUE,
+  edit_token              VARCHAR(36)  UNIQUE,
+  raw_spec_text           TEXT,
+  raw_pref_text           TEXT,
+  notification_enabled    TINYINT(1)   NOT NULL DEFAULT 1,
+  is_active               TINYINT(1)   NOT NULL DEFAULT 1,
+  subscription_status     ENUM('free','paid','expired') NOT NULL DEFAULT 'free',
+  subscription_expires_at DATE,
+  created_at              DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at              DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_preferences (
+  user_id               INT PRIMARY KEY,
+  pref_regions          JSON,
+  pref_job_fields       JSON,
+  pref_employment_types JSON,
+  pref_recruit_types    JSON,
+  pref_education_levels JSON,
+  pref_org_types        JSON,
+  pref_org_names        JSON,
+  FOREIGN KEY (user_id) REFERENCES users(user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_specs (
+  user_id                  INT         PRIMARY KEY,
+  birth_date               DATE        NOT NULL,
+  gender                   ENUM('남','여') NOT NULL,
+  education_level          VARCHAR(30) NOT NULL,
+  education_status         VARCHAR(20) NOT NULL,
+  major_category           VARCHAR(30),
+  school_name              VARCHAR(100),
+  school_region            VARCHAR(30),
+  military_status          VARCHAR(20) NOT NULL,
+  military_discharge_date  DATE,
+  is_disabled              TINYINT(1)  NOT NULL DEFAULT 0,
+  disability_type          VARCHAR(100),
+  is_veteran               TINYINT(1)  NOT NULL DEFAULT 0,
+  veteran_type             VARCHAR(100),
+  residence_region         VARCHAR(30),
+  residence_detail         VARCHAR(200),
+  toeic_score              INT,
+  toeic_expiry             DATE,
+  toeic_speaking_score     INT,
+  toeic_speaking_expiry    DATE,
+  opic_grade               VARCHAR(10),
+  opic_expiry              DATE,
+  is_low_income            TINYINT(1)  NOT NULL DEFAULT 0,
+  is_north_korean_defector TINYINT(1)  NOT NULL DEFAULT 0,
+  is_multicultural_family  TINYINT(1)  NOT NULL DEFAULT 0,
+  is_independent_youth     TINYINT(1)  NOT NULL DEFAULT 0,
+  is_career_break_woman    TINYINT(1)  NOT NULL DEFAULT 0,
+  is_part_time_worker      TINYINT(1)  NOT NULL DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_certificates (
+  cert_id    INT          AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT          NOT NULL,
+  cert_name  VARCHAR(100) NOT NULL,
+  issue_date DATE         NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_posting_analyses (
+  analysis_id              INT  AUTO_INCREMENT PRIMARY KEY,
+  user_id                  INT  NOT NULL,
+  posting_id               INT  NOT NULL,
+  track_id                 INT  NOT NULL,
+  is_eligible              TINYINT(1)    NOT NULL,
+  ineligible_reasons       JSON,
+  language_score           DECIMAL(5,2),
+  certificate_score        DECIMAL(5,2),
+  total_document_score     DECIMAL(5,2),
+  certificate_score_detail JSON,
+  applicable_bonus_points  JSON,
+  unchecked_bonus_points   JSON,
+  quota_policy_matches     JSON,
+  analyzed_at              DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  email_sent_at            DATETIME,
+  FOREIGN KEY (user_id)    REFERENCES users(user_id),
+  FOREIGN KEY (posting_id) REFERENCES postings(posting_id),
+  FOREIGN KEY (track_id)   REFERENCES posting_tracks(track_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
