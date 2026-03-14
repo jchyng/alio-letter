@@ -6,18 +6,20 @@
 import json
 from pathlib import Path
 
+from models import Posting
+
 RAW_DIR = Path(__file__).parent / "raw"
 POSTINGS_FILE = RAW_DIR / "postings.jsonl"
 
 
-def save(record: dict) -> None:
+def save(record: Posting) -> None:
     """공고 1건 저장. 중복 여부는 호출부에서 판단."""
     RAW_DIR.mkdir(exist_ok=True)
     with POSTINGS_FILE.open("a", encoding="utf-8") as f:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
-def save_batch(records: list[dict]) -> None:
+def save_batch(records: list[Posting]) -> None:
     """공고 여러 건 한꺼번에 저장. 파일을 한 번만 열고 닫는다."""
     if not records:
         return
@@ -27,7 +29,7 @@ def save_batch(records: list[dict]) -> None:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
-def load_all() -> list[dict]:
+def load_all() -> list[Posting]:
     """저장된 공고 전체 반환."""
     if not POSTINGS_FILE.exists():
         return []

@@ -7,13 +7,14 @@ from urllib.parse import urlparse, parse_qs
 # TODO: MIGRATE TO DB
 # 스키마 확정 후 store.py 구현을 db.py 기반으로 교체하면 이 import는 그대로 유지됨
 import store
+from models import Posting
 
 BASE_URL = "https://job.alio.go.kr"
 LIST_URL = f"{BASE_URL}/recruit.do?ing=2"
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
 
-def _fetch_page(page: int) -> list[dict]:
+def _fetch_page(page: int) -> list[Posting]:
     """단일 페이지 크롤링."""
     url = f"{LIST_URL}&pageNo={page}"
     resp = requests.get(url, headers=HEADERS, timeout=10)
@@ -48,7 +49,14 @@ def _fetch_page(page: int) -> list[dict]:
         deadline_raw = tds[7].get_text(strip=True)
         deadline = re.sub(r"D-\d+", "", deadline_raw).strip()
 
-        results.append({"idx": idx, "title": title, "url": url, "deadline": deadline, "registered": registered})
+        results.append(Posting(
+            idx=idx,
+            title=title,
+            url=url,
+            deadline=deadline,
+            registered=registered,
+            is_analyzed=False,
+        ))
 
     return results
 
