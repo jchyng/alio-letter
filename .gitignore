@@ -28,6 +28,9 @@ venv/
 *.db
 *.sql.gz
 
+# Pipeline data
+pipeline/raw/
+
 # Logs
 logs
 *.log

@@ -37,9 +37,38 @@ def load_all() -> list[Posting]:
         return [json.loads(line) for line in f if line.strip()]
 
 
+def load_unanalyzed() -> list[Posting]:
+    """is_analyzed=False인 공고만 반환."""
+    return [p for p in load_all() if not p["is_analyzed"]]
+
+
 def is_empty() -> bool:
     """저장된 공고가 없으면 True."""
     return not POSTINGS_FILE.exists() or POSTINGS_FILE.stat().st_size == 0
+
+
+def update_analyzed(idx: int) -> None:
+    """idx에 해당하는 공고의 is_analyzed를 True로 업데이트. JSONL 전체 재작성."""
+    records = load_all()
+    for r in records:
+        if r["idx"] == idx:
+            r["is_analyzed"] = True
+    with POSTINGS_FILE.open("w", encoding="utf-8") as f:
+        for r in records:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+
+def upsert_detail(posting: Posting) -> None:
+    """상세 크롤링 결과를 JSONL에 머지. is_analyzed=True로 업데이트."""
+    # TODO: MIGRATE TO DB — db.execute(UPDATE postings SET ncs=?, ... WHERE alio_id=?)
+    records = load_all()
+    for r in records:
+        if r["idx"] == posting["idx"]:
+            r.update({k: v for k, v in posting.items() if k != "idx"})
+            r["is_analyzed"] = True
+    with POSTINGS_FILE.open("w", encoding="utf-8") as f:
+        for r in records:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
 
 def clear() -> None:

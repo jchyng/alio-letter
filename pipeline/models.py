@@ -1,10 +1,25 @@
 from typing import TypedDict
 
 
-class Posting(TypedDict):
-    idx: int          # alio 공고 ID (URL의 idx 파라미터)
-    title: str        # 공고 제목
-    url: str          # 공고 상세 URL
-    deadline: str     # 마감일 (예: "26.03.29")
-    registered: str   # 등록일 (예: "2026.03.14")
-    is_analyzed: bool # AI 분석 완료 여부 (기본값 False)
+class Posting(TypedDict, total=False):
+    # 목록 크롤링 시 채워지는 필드
+    idx: int
+    title: str
+    org: str
+    url: str
+    deadline: str
+    registered: str
+    is_analyzed: bool
+    # 상세 크롤링 시 채워지는 필드
+    ncs: str
+    work_field: str
+    employment_type: str
+    location: str
+    education: str
+    recruit_type: str
+    is_substitute: str
+    salary_url: str
+    preferred: str
+    attachment_path: str
+    attachment_ext: str
+    attachment_converted: str

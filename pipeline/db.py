@@ -12,16 +12,27 @@ from pathlib import Path
 DB_PATH = Path(__file__).parent / "local.db"
 
 SCHEMA_SQL = """
-CREATE TABLE IF NOT EXISTS postings (
-    posting_id   INTEGER PRIMARY KEY,
-    alio_id      TEXT NOT NULL UNIQUE,
-    title        TEXT NOT NULL,
-    org_name     TEXT,
-    posting_url  TEXT NOT NULL,
-    deadline     TEXT NOT NULL,
-    parse_status TEXT NOT NULL DEFAULT 'pending',
-    status       TEXT NOT NULL DEFAULT '진행중',
-    created_at   TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+DROP TABLE IF EXISTS postings;
+CREATE TABLE postings (
+    posting_id          INTEGER PRIMARY KEY,
+    alio_id             TEXT NOT NULL UNIQUE,
+    title               TEXT NOT NULL,
+    org_name            TEXT,
+    posting_url         TEXT NOT NULL,
+    deadline            TEXT NOT NULL,
+    registered          TEXT,
+    ncs                 TEXT,
+    work_field          TEXT,
+    employment_type     TEXT,
+    location            TEXT,
+    education           TEXT,
+    recruit_type        TEXT,
+    is_substitute       TEXT,
+    salary_url          TEXT,
+    preferred           TEXT,
+    attachment_path     TEXT,
+    attachment_ext      TEXT,
+    attachment_converted TEXT
 );
 """
 
