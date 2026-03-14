@@ -9,7 +9,6 @@ class Posting(TypedDict, total=False):
     url: str
     deadline: str
     registered: str
-    is_analyzed: bool
     # 상세 크롤링 시 채워지는 필드
     ncs: str
     work_field: str

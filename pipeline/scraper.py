@@ -61,13 +61,12 @@ def _fetch_page(page: int) -> list[Posting]:
             url=url,
             deadline=deadline,
             registered=registered,
-            is_analyzed=False,
         ))
 
     return results
 
 
-def fetch_all() -> int:
+def fetch_all_postings() -> int:
     """전체 크롤링 + 페이지별 즉시 저장. 최초 실행 시 사용."""
     total = 0
     page = 1
@@ -151,7 +150,7 @@ def _download_announcement(idx: int, soup) -> tuple[str, str]:
     return "", ""
 
 
-def convert_attachment(path: str, ext: str) -> str:
+def hwp_to_pdf(path: str, ext: str) -> str:
     """hwp/hwpx → pdf 변환 (LibreOffice). 변환 불필요하거나 실패 시 '' 반환."""
     import subprocess
     import shutil
@@ -199,7 +198,7 @@ def _fetch_detail(posting: Posting) -> Posting:
                     fields[key] = td.get_text(strip=True)
 
     attachment_path, attachment_ext = _download_announcement(posting["idx"], soup)
-    attachment_converted = convert_attachment(attachment_path, attachment_ext) if attachment_path else ""
+    attachment_converted = hwp_to_pdf(attachment_path, attachment_ext) if attachment_path else ""
 
     return Posting(
         **posting,
@@ -220,9 +219,9 @@ def _fetch_detail(posting: Posting) -> Posting:
 
 def fetch_detail_postings() -> int:
     """미분석 공고의 상세페이지 크롤링."""
-    unanalyzed = store.load_unanalyzed()
+    unanalyzed = store.load_unfetched()
     total = len(unanalyzed)
-    print(f"미분석 공고 {total}건 처리 시작")
+    print(f"미완료 공고 {total}건 처리 시작")
 
     for i, posting in enumerate(unanalyzed, 1):
         print(f"[{i}/{total}] {posting['url']}")
@@ -235,7 +234,7 @@ def fetch_detail_postings() -> int:
 
 if __name__ == "__main__":
     if store.is_empty():
-        total = fetch_all()
+        total = fetch_all_postings()
     else:
         total = fetch_new_postings()
     print(f"저장 완료: {total}건")
