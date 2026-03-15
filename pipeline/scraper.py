@@ -160,10 +160,14 @@ def hwp_to_pdf(path: str, ext: str) -> str:
     with tempfile.TemporaryDirectory() as tmp:
         tmp_src = Path(tmp) / Path(path).name
         shutil.copy2(path, tmp_src)
-        result = subprocess.run(
-            ["libreoffice", "--headless", "--convert-to", "pdf", "--outdir", tmp, str(tmp_src)],
-            capture_output=True, timeout=120,
-        )
+        try:
+            result = subprocess.run(
+                ["libreoffice", "--headless", "--convert-to", "pdf", "--outdir", tmp, str(tmp_src)],
+                capture_output=True, timeout=120,
+            )
+        except FileNotFoundError:
+            print("  LibreOffice 미설치, HWP 변환 건너뜀")
+            return ""
         tmp_pdf = tmp_src.with_suffix(".pdf")
         if result.returncode == 0 and tmp_pdf.exists():
             dest = Path(path).with_suffix(".pdf")
