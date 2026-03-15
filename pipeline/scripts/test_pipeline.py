@@ -13,20 +13,18 @@ from pathlib import Path
 # pipeline/ 디렉터리를 sys.path에 추가
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import db
 import scraper
-import store
 from analyzer import analyze_posting, _load_client
 
-RAW_DIR = Path(__file__).parent.parent / "raw"
 TARGET_COUNT = 5  # 수집할 PDF 공고 수 (Gemini 무료 분당 5회 제한)
 
 
 def main() -> None:
-    # 기존 데이터 초기화
-    store.clear()
-    analyses = RAW_DIR / "analyses.jsonl"
-    if analyses.exists():
-        analyses.unlink()
+    # DB 초기화 + 기존 데이터 삭제
+    db.init_db()
+    db.clear()
+    db.execute("DELETE FROM posting_tracks")
 
     # 1단계: PDF 첨부파일이 있는 공고 N건 찾기
     print(f"=== 1단계: 목록 수집 (PDF 공고 {TARGET_COUNT}건 탐색) ===")
@@ -43,7 +41,7 @@ def main() -> None:
             has_pdf = ext == "pdf" and path or converted
             if has_pdf:
                 targets.append(detail)
-                store.save(detail)
+                db.upsert_posting(detail)
                 print(f"  [{len(targets)}] [{detail['idx']}] {detail['title']}")
             if len(targets) >= TARGET_COUNT:
                 break
@@ -67,11 +65,11 @@ def main() -> None:
         try:
             tracks, bonus_points, notes = analyze_posting(posting, model)
 
-            store.save_tracks(tracks)
+            db.save_tracks(tracks)
             if bonus_points:
-                store.upsert_detail({"idx": idx, "bonus_points": bonus_points})
+                db.upsert_detail({"idx": idx, "bonus_points": bonus_points})
             if notes:
-                store.upsert_detail({"idx": idx, "notes": notes})
+                db.upsert_detail({"idx": idx, "notes": notes})
 
             print(f"  bonus_points: {bonus_points[:60]}...")
             if notes:
@@ -87,7 +85,7 @@ def main() -> None:
     print(f"\n=== 결과 요약 ===")
     print(f"분석 완료: {analyzed}건 / 실패: {failed}건")
 
-    all_tracks = store.load_all_tracks()
+    all_tracks = db.load_all_tracks()
     total_positions = sum(t.get("total_positions", 0) for t in all_tracks)
     print(f"총 트랙 수: {len(all_tracks)}")
     print(f"총 채용인원: {total_positions}명")
@@ -95,7 +93,7 @@ def main() -> None:
         print(f"공고당 평균 트랙: {len(all_tracks) / analyzed:.1f}개")
         print(f"공고당 평균 채용인원: {total_positions / analyzed:.1f}명")
 
-    print("\n=== analyses.jsonl ===")
+    print("\n=== 트랙 목록 ===")
     for t in all_tracks:
         print(json.dumps(t, ensure_ascii=False))
 

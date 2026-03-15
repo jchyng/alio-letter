@@ -10,8 +10,8 @@
 
 import sys
 
+import db
 import scraper
-import store
 import user_input
 import judge
 from analyzer import analyze_all_postings
@@ -29,7 +29,7 @@ MENU = """
 
 def run(choice: str) -> None:
     if choice == "1":
-        if store.is_empty():
+        if db.is_empty():
             print("전체 목록 수집 시작...")
             n = scraper.fetch_all_postings()
         else:
@@ -47,7 +47,7 @@ def run(choice: str) -> None:
         user_input.collect()
 
     elif choice == "5":
-        profile = store.load_user_profile()
+        profile = db.load_user_profile()
         if not profile:
             print("저장된 프로필이 없습니다. 먼저 사용자 정보를 입력하세요 (4번).")
             return
@@ -59,6 +59,8 @@ def run(choice: str) -> None:
 
 
 def main() -> None:
+    db.init_db()
+
     if len(sys.argv) > 1:
         run(sys.argv[1])
         return

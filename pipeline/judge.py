@@ -19,7 +19,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-import store
+import db
 from models import PostingTrack, TrackJudgment, UserProfile
 
 load_dotenv(Path(__file__).parent / ".env")
@@ -142,13 +142,13 @@ def judge_track(
 
 def judge_all_tracks(profile: UserProfile, model: genai.GenerativeModel) -> list[TrackJudgment]:
     """저장된 모든 트랙을 판정하고 결과를 반환한다."""
-    tracks = store.load_all_tracks()
+    tracks = db.load_all_tracks()
     if not tracks:
         print("분석된 트랙이 없습니다. 먼저 분석(3번)을 실행하세요.")
         return []
 
     # 공고별 bonus_points를 미리 로드 (트랙마다 postings를 뒤지지 않도록)
-    postings = {p["idx"]: p for p in store.load_all() if "idx" in p}
+    postings = {p["idx"]: p for p in db.load_all() if "idx" in p}
 
     judgments: list[TrackJudgment] = []
     total = len(tracks)
@@ -167,7 +167,7 @@ def judge_all_tracks(profile: UserProfile, model: genai.GenerativeModel) -> list
         except Exception as e:
             print(f"  판정 실패: {e}")
 
-    store.save_judgments(judgments)
+    db.save_judgments_local(judgments)
     print(f"\n완료: {len(judgments)}/{total}건 판정, raw/judgments.jsonl 저장")
     return judgments
 

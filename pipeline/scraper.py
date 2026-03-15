@@ -8,7 +8,7 @@ from urllib.parse import parse_qs, urlparse
 import requests
 from bs4 import BeautifulSoup
 
-import store
+import db
 from models import Posting
 
 BASE_URL = "https://job.alio.go.kr"
@@ -75,7 +75,7 @@ def fetch_all_postings() -> int:
         rows = _fetch_page(page)
         if not rows:
             break
-        store.save_batch(rows)
+        db.save_batch(rows)
         total += len(rows)
         page += 1
     print()
@@ -101,7 +101,7 @@ def fetch_new_postings() -> int:
                 break
             page_rows.append(row)
 
-        store.save_batch(page_rows)
+        db.save_batch(page_rows)
         total += len(page_rows)
 
         if done:
@@ -224,21 +224,21 @@ def _fetch_detail(posting: Posting) -> Posting:
 
 def fetch_detail_postings() -> int:
     """미분석 공고의 상세페이지 크롤링."""
-    unanalyzed = store.load_unfetched()
+    unanalyzed = db.load_unfetched()
     total = len(unanalyzed)
     print(f"미완료 공고 {total}건 처리 시작")
 
     for i, posting in enumerate(unanalyzed, 1):
         print(f"[{i}/{total}] {posting['url']}")
         detail = _fetch_detail(posting)
-        store.upsert_detail(detail)
+        db.upsert_detail(detail)
 
     print(f"완료: {total}건")
     return total
 
 
 if __name__ == "__main__":
-    if store.is_empty():
+    if db.is_empty():
         total = fetch_all_postings()
     else:
         total = fetch_new_postings()

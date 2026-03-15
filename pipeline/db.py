@@ -1,24 +1,23 @@
-# TODO: MIGRATE TO D1
-# 현재: sqlite3 (로컬 파일)
-# D1 전환 시: 아래 execute/fetchall을 Cloudflare D1 REST API 호출로 교체
-#   POST https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/d1/database/{DB_ID}/query
-#   Headers: {"Authorization": "Bearer {API_TOKEN}"}
-#   Body:    {"sql": "...", "params": [...]}
-# Cloudflare Functions 내부에서는 REST API 대신 env.DB.prepare(...) 바인딩 사용
+# 파이프라인 단일 저장소.
+#
+# 로컬: SQLite (local.db) — main.py 시작 시 init_db() 한 번 호출.
+# D1 전환 시: _connect() 제거, execute/fetchall을 D1 REST API 호출로 교체.
+#   POST https://api.cloudflare.com/client/v4/accounts/{ID}/d1/database/{DB_ID}/query
+#   Body: {"sql": "...", "params": [...]}
+#
+# 로컬 전용 파일 (gitignore: pipeline/raw/):
+#   raw/user_profile.json  — CLI 사용자 프로필
+#   raw/judgments.jsonl    — 로컬 판정 결과 검토용
 
 import json
 import sqlite3
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent / "local.db"
+RAW_DIR = Path(__file__).parent / "raw"
 
 SCHEMA_SQL = """
-DROP TABLE IF EXISTS user_judgments;
-DROP TABLE IF EXISTS posting_tracks;
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS postings;
-
-CREATE TABLE postings (
+CREATE TABLE IF NOT EXISTS postings (
     posting_id          INTEGER PRIMARY KEY,
     alio_id             TEXT NOT NULL UNIQUE,
     title               TEXT NOT NULL,
@@ -42,7 +41,7 @@ CREATE TABLE postings (
     notes               TEXT
 );
 
-CREATE TABLE posting_tracks (
+CREATE TABLE IF NOT EXISTS posting_tracks (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     posting_id      INTEGER NOT NULL REFERENCES postings(posting_id),
     track_name      TEXT NOT NULL,
@@ -51,18 +50,18 @@ CREATE TABLE posting_tracks (
     eligibility     TEXT   -- JSON {"education":...,"career":...,...}
 );
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     email         TEXT NOT NULL UNIQUE,
     name          TEXT NOT NULL,
-    raw_spec_text TEXT,            -- 원문 스펙 입력
+    raw_spec_text TEXT,
     parsed_spec   TEXT,            -- JSON (UserProfile)
     filter_prefs  TEXT,            -- JSON (PostingFilter)
     edit_token    TEXT UNIQUE,
     created_at    TEXT DEFAULT (datetime('now'))
 );
 
-CREATE TABLE user_judgments (
+CREATE TABLE IF NOT EXISTS user_judgments (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id          INTEGER NOT NULL REFERENCES users(id),
     posting_track_id INTEGER NOT NULL REFERENCES posting_tracks(id),
@@ -76,10 +75,22 @@ CREATE TABLE user_judgments (
 """
 
 
-def init_db():
-    """테이블 초기화. D1 전환 시: wrangler d1 execute로 schema.sql 적용."""
+def init_db() -> None:
+    """테이블이 없으면 생성. 시작 시 항상 안전하게 호출 가능."""
     with _connect() as conn:
         conn.executescript(SCHEMA_SQL)
+
+
+def reset_db() -> None:
+    """테이블 전체 삭제 후 재생성. 개발·테스트 초기화용."""
+    drop_sql = """
+    DROP TABLE IF EXISTS user_judgments;
+    DROP TABLE IF EXISTS posting_tracks;
+    DROP TABLE IF EXISTS users;
+    DROP TABLE IF EXISTS postings;
+    """
+    with _connect() as conn:
+        conn.executescript(drop_sql + SCHEMA_SQL)
 
 
 def execute(sql: str, params: tuple = ()) -> None:
@@ -100,7 +111,7 @@ def fetchall(sql: str, params: tuple = ()) -> list[dict]:
 # ── 공고 ────────────────────────────────────────────────────────────────────
 
 def upsert_posting(posting: dict) -> None:
-    """공고 1건 INSERT OR REPLACE. alio_id를 기준으로 덮어쓴다."""
+    """공고 1건 INSERT OR REPLACE. alio_id(=idx)를 기준으로 덮어쓴다."""
     execute(
         """
         INSERT OR REPLACE INTO postings
@@ -136,6 +147,61 @@ def upsert_posting(posting: dict) -> None:
     )
 
 
+def save_batch(records: list[dict]) -> None:
+    """공고 여러 건 한꺼번에 upsert."""
+    for r in records:
+        upsert_posting(r)
+
+
+def upsert_detail(posting: dict) -> None:
+    """상세 크롤링 결과를 alio_id 기준으로 UPDATE.
+    posting에는 idx와 변경할 필드만 담아 전달한다."""
+    # Posting TypedDict 키 → DB 컬럼명 변환
+    col_map = {"org": "org_name", "url": "posting_url"}
+    fields = {k: v for k, v in posting.items() if k != "idx"}
+    if not fields:
+        return
+    set_parts, params = [], []
+    for k, v in fields.items():
+        set_parts.append(f"{col_map.get(k, k)} = ?")
+        params.append(v)
+    params.append(str(posting.get("idx", "")))
+    execute(
+        f"UPDATE postings SET {', '.join(set_parts)} WHERE alio_id = ?",
+        tuple(params),
+    )
+
+
+def load_all() -> list[dict]:
+    """저장된 공고 전체를 Posting-compatible dict 리스트로 반환."""
+    return [_row_to_posting(r) for r in fetchall("SELECT * FROM postings")]
+
+
+def load_unfetched() -> list[dict]:
+    """상세 크롤링 미완료 공고만 반환 (employment_type NULL)."""
+    return [_row_to_posting(r)
+            for r in fetchall("SELECT * FROM postings WHERE employment_type IS NULL")]
+
+
+def is_empty() -> bool:
+    """저장된 공고가 없으면 True."""
+    rows = fetchall("SELECT COUNT(*) AS cnt FROM postings")
+    return rows[0]["cnt"] == 0 if rows else True
+
+
+def _row_to_posting(row: dict) -> dict:
+    """DB row → Posting TypedDict-compatible dict (컬럼명 역변환)."""
+    d = dict(row)
+    try:
+        d["idx"] = int(d.pop("alio_id", 0))
+    except (ValueError, TypeError):
+        d["idx"] = d.pop("alio_id", 0)
+    d["org"] = d.pop("org_name", "")
+    d["url"] = d.pop("posting_url", "")
+    d.pop("posting_id", None)  # DB 내부 ID 제거
+    return d
+
+
 # ── 트랙 ────────────────────────────────────────────────────────────────────
 
 def save_tracks(tracks: list[dict]) -> None:
@@ -165,7 +231,41 @@ def save_tracks(tracks: list[dict]) -> None:
         )
 
 
-# ── 사용자 ───────────────────────────────────────────────────────────────────
+def load_all_tracks() -> list[dict]:
+    """저장된 트랙 전체를 PostingTrack-compatible dict 리스트로 반환 (idx 포함)."""
+    rows = fetchall(
+        "SELECT pt.*, p.alio_id FROM posting_tracks pt "
+        "JOIN postings p ON pt.posting_id = p.posting_id"
+    )
+    result = []
+    for row in rows:
+        d = dict(row)
+        try:
+            d["idx"] = int(d.pop("alio_id", 0))
+        except (ValueError, TypeError):
+            d["idx"] = d.pop("alio_id", 0)
+        d.pop("posting_id", None)
+        if isinstance(d.get("eligibility"), str):
+            try:
+                d["eligibility"] = json.loads(d["eligibility"])
+            except (json.JSONDecodeError, TypeError):
+                pass
+        result.append(d)
+    return result
+
+
+def is_analyzed(idx) -> bool:
+    """해당 공고(idx=alio_id)가 이미 분석됐는지 확인."""
+    rows = fetchall(
+        "SELECT COUNT(*) AS cnt FROM posting_tracks pt "
+        "JOIN postings p ON pt.posting_id = p.posting_id "
+        "WHERE p.alio_id = ?",
+        (str(idx),),
+    )
+    return rows[0]["cnt"] > 0 if rows else False
+
+
+# ── 사용자 (웹 등록) ──────────────────────────────────────────────────────────
 
 def save_user(email: str, name: str, raw_spec_text: str,
               parsed_spec: dict | None, filter_prefs: dict | None,
@@ -190,7 +290,7 @@ def save_user(email: str, name: str, raw_spec_text: str,
     return rows[0]["id"]
 
 
-# ── 판정 결과 ────────────────────────────────────────────────────────────────
+# ── 판정 결과 (웹 사용자) ──────────────────────────────────────────────────────
 
 def save_judgments(user_id: int, judgments: list[dict]) -> None:
     """판정 결과 INSERT OR REPLACE. posting_track_id는 (alio_id, track_name)으로 조회."""
@@ -222,6 +322,43 @@ def save_judgments(user_id: int, judgments: list[dict]) -> None:
                 json.dumps(j.get("bonus_reasons", []), ensure_ascii=False),
             ),
         )
+
+
+# ── 로컬 개발 전용 (pipeline/raw/ — gitignore 적용) ──────────────────────────
+
+_PROFILE_FILE = RAW_DIR / "user_profile.json"
+_JUDGMENTS_FILE = RAW_DIR / "judgments.jsonl"
+
+
+def save_user_profile(profile: dict) -> None:
+    """사용자 프로필을 JSON 파일로 저장 (CLI 개발 전용)."""
+    RAW_DIR.mkdir(exist_ok=True)
+    with _PROFILE_FILE.open("w", encoding="utf-8") as f:
+        json.dump(profile, f, ensure_ascii=False, indent=2)
+
+
+def load_user_profile() -> dict | None:
+    """저장된 사용자 프로필 반환 (CLI 개발 전용). 없으면 None."""
+    if not _PROFILE_FILE.exists():
+        return None
+    with _PROFILE_FILE.open(encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_judgments_local(judgments: list[dict]) -> None:
+    """판정 결과를 JSONL 파일로 저장 (CLI 검토용). 재실행 시 덮어씀."""
+    if not judgments:
+        return
+    RAW_DIR.mkdir(exist_ok=True)
+    with _JUDGMENTS_FILE.open("w", encoding="utf-8") as f:
+        for j in judgments:
+            f.write(json.dumps(j, ensure_ascii=False) + "\n")
+
+
+def clear() -> None:
+    """postings 전체 삭제 (테스트 초기화용). 연관 tracks도 CASCADE 삭제."""
+    execute("DELETE FROM posting_tracks WHERE posting_id IN (SELECT posting_id FROM postings)")
+    execute("DELETE FROM postings")
 
 
 def _connect() -> sqlite3.Connection:

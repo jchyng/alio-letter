@@ -3,7 +3,7 @@ CLI 대화형 사용자 프로필 입력.
 이미 저장된 프로필이 있으면 현재 값을 보여주고 수정 여부를 확인한다.
 """
 
-import store
+import db
 from models import UserProfile
 
 
@@ -111,7 +111,7 @@ def _ask_certificates(current: list[str] | None) -> list[str]:
 
 def collect() -> None:
     """사용자 프로필을 대화형으로 입력받아 저장한다."""
-    existing = store.load_user_profile()
+    existing = db.load_user_profile()
 
     if existing:
         print("\n저장된 프로필:")
@@ -195,7 +195,7 @@ def collect() -> None:
     profile["is_independent_youth"] = _ask_bool("자립준비청년(보호종료아동) 여부", profile.get("is_independent_youth", False))
     profile["is_multicultural_child"] = _ask_bool("다문화가족자녀 여부", profile.get("is_multicultural_child", False))
 
-    store.save_user_profile(profile)
+    db.save_user_profile(profile)
     print("\n프로필이 저장되었습니다.")
     for k, v in profile.items():
         print(f"  {k}: {v}")

@@ -1,5 +1,5 @@
 """
-Gemini를 사용해 공고 첨부파일(PDF)을 분석하고 결과를 raw/analyses.jsonl에 저장.
+Gemini를 사용해 공고 첨부파일(PDF)을 분석하고 결과를 DB(posting_tracks)에 저장.
 
 # 왜 scraper와 분리해서 실행하는가?
 #
@@ -43,7 +43,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-import store
+import db
 from models import Posting, PostingTrack
 
 load_dotenv(Path(__file__).parent / ".env")
@@ -149,7 +149,7 @@ def analyze_posting(posting: Posting, model: genai.GenerativeModel) -> tuple[lis
 
 def analyze_all_postings() -> None:
     model = _load_client()
-    postings = store.load_all()
+    postings = db.load_all()
 
     if not postings:
         print("저장된 공고가 없습니다.")
@@ -161,7 +161,7 @@ def analyze_all_postings() -> None:
     for posting in postings:
         idx = posting.get("idx")
 
-        if store.is_analyzed(idx):
+        if db.is_analyzed(idx):
             print(f"[{idx}] 이미 분석됨, 건너뜀")
             skipped += 1
             continue
@@ -176,16 +176,13 @@ def analyze_all_postings() -> None:
         try:
             tracks, bonus_points, notes = analyze_posting(posting, model)
 
-            # 트랙을 analyses.jsonl에 저장
-            store.save_tracks(tracks)
+            db.save_tracks(tracks)
 
-            # 가산점을 postings.jsonl에 반영
             if bonus_points:
-                store.upsert_detail({"idx": idx, "bonus_points": bonus_points})
+                db.upsert_detail({"idx": idx, "bonus_points": bonus_points})
 
-            # 기타 메모를 postings.jsonl에 반영
             if notes:
-                store.upsert_detail({"idx": idx, "notes": notes})
+                db.upsert_detail({"idx": idx, "notes": notes})
 
             print(f"[{idx}] 저장 완료: 트랙 {len(tracks)}개")
             analyzed += 1
