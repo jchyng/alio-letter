@@ -132,19 +132,139 @@
         <div class="form-section">
           <div class="form-section-label">희망 조건</div>
 
+          <!-- 표준직무(NCS) -->
           <div class="form-group">
-            <label class="form-label" for="prefText">희망 조건 <span class="required">*</span></label>
-            <textarea id="prefText" name="pref_text" class="form-textarea" required
-              placeholder="예시) 전기 또는 기계 직무, 서울/경기/부산 근무 희망, 한전/한수원/가스공사 같은 에너지 공기업 관심, 일반채용 또는 장애인채용, 연봉 5천만원 이상"></textarea>
-            <div class="form-hint-box">
-              아래 내용을 자유롭게 적어주세요:<br>
-              &bull; 희망 직무 분야 (사무, ICT, 기계, 전기, 화학, 토목, 건축 등)<br>
-              &bull; 희망 근무 지역 (시/도 단위)<br>
-              &bull; 관심 기관 이름<br>
-              &bull; 희망 채용구분 (일반, 장애, 보훈, 고졸 등)<br>
-              &bull; 희망 연봉 수준 (선택. 예: 5천만원 이상)
+            <label class="form-label" for="filterNcs">표준직무(NCS)</label>
+            <input type="text" id="filterNcs" class="form-input" placeholder="예: 사무원, IT개발">
+          </div>
+
+          <!-- 근무지 -->
+          <div class="form-group">
+            <label class="form-label">근무지</label>
+            <div class="checkbox-grid">
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="해외"><span>해외</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="서울특별시"><span>서울</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="인천광역시"><span>인천</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="대전광역시"><span>대전</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="대구광역시"><span>대구</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="부산광역시"><span>부산</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="광주광역시"><span>광주</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="울산광역시"><span>울산</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="경기도"><span>경기</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="강원특별자치도"><span>강원</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="충청남도"><span>충남</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="충청북도"><span>충북</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="경상북도"><span>경북</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="경상남도"><span>경남</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="전라남도"><span>전남</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="전북특별자치도"><span>전북</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="제주특별자치도"><span>제주</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="locations" value="세종특별자치시"><span>세종</span></label>
             </div>
-            <div class="form-error">희망 조건을 입력해주세요</div>
+          </div>
+
+          <!-- 근무분야 -->
+          <div class="form-group">
+            <label class="form-label">근무분야</label>
+            <div class="checkbox-grid">
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="일반직"><span>일반직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="행정직"><span>행정직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="경영직"><span>경영직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="사무직"><span>사무직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="관리직"><span>관리직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="연구직"><span>연구직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="기술직"><span>기술직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="시설직"><span>시설직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="전산직"><span>전산직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="교수직"><span>교수직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="의사직"><span>의사직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="간호직"><span>간호직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="약무직"><span>약무직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="보건직"><span>보건직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="위생직"><span>위생직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="기능직"><span>기능직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="운영직"><span>운영직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="공무직"><span>공무직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="안전직"><span>안전직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="교원직"><span>교원직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="별정직"><span>별정직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="계약직"><span>계약직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="전문직"><span>전문직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="상담직"><span>상담직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="work_fields" value="기타"><span>기타</span></label>
+            </div>
+          </div>
+
+          <!-- 고용형태 -->
+          <div class="form-group">
+            <label class="form-label">고용형태</label>
+            <div class="checkbox-grid">
+              <label class="form-checkbox"><input type="checkbox" name="employment_types" value="정규직"><span>정규직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="employment_types" value="무기계약직"><span>무기계약직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="employment_types" value="비정규직"><span>비정규직</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="employment_types" value="청년인턴(체험형)"><span>청년인턴(체험형)</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="employment_types" value="청년인턴(채용형)"><span>청년인턴(채용형)</span></label>
+            </div>
+          </div>
+
+          <!-- 채용구분 -->
+          <div class="form-group">
+            <label class="form-label">채용구분</label>
+            <div class="checkbox-grid">
+              <label class="form-checkbox"><input type="checkbox" name="recruit_types" value="신입"><span>신입</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="recruit_types" value="경력"><span>경력</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="recruit_types" value="신입+경력"><span>신입+경력</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="recruit_types" value="외국인 전형"><span>외국인 전형</span></label>
+            </div>
+          </div>
+
+          <!-- 학력정보 -->
+          <div class="form-group">
+            <label class="form-label">학력정보</label>
+            <div class="checkbox-grid">
+              <label class="form-checkbox"><input type="checkbox" name="educations" value="학력무관"><span>학력무관</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="educations" value="중졸이하"><span>중졸이하</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="educations" value="고졸"><span>고졸</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="educations" value="대졸(2~3년)"><span>대졸(2~3년)</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="educations" value="대졸(4년)"><span>대졸(4년)</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="educations" value="석사"><span>석사</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="educations" value="박사"><span>박사</span></label>
+            </div>
+            <div class="radio-group mt-2">
+              <span class="form-label-sm">조건:</span>
+              <label class="form-radio"><input type="radio" name="education_mode" value="OR" checked><span>OR (하나라도 해당)</span></label>
+              <label class="form-radio"><input type="radio" name="education_mode" value="AND"><span>AND (모두 해당)</span></label>
+            </div>
+          </div>
+
+          <!-- 대체인력유무 -->
+          <div class="form-group">
+            <label class="form-label">대체인력유무</label>
+            <div class="radio-group">
+              <label class="form-radio"><input type="radio" name="is_substitute" value="전체" checked><span>전체</span></label>
+              <label class="form-radio"><input type="radio" name="is_substitute" value="예"><span>예</span></label>
+              <label class="form-radio"><input type="radio" name="is_substitute" value="아니오"><span>아니오</span></label>
+            </div>
+          </div>
+
+          <!-- 기관유형 -->
+          <div class="form-group">
+            <label class="form-label" for="filterOrgType">기관유형</label>
+            <select id="filterOrgType" class="form-select">
+              <option value="">전체</option>
+              <option value="공기업">공기업</option>
+              <option value="준정부기관">준정부기관</option>
+              <option value="기타공공기관">기타공공기관</option>
+              <option value="지방공기업">지방공기업</option>
+              <option value="지방공단">지방공단</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+
+          <!-- 기관명 -->
+          <div class="form-group">
+            <label class="form-label" for="filterOrgName">기관명</label>
+            <input type="text" id="filterOrgName" class="form-input" placeholder="예: 한국전력공사">
           </div>
         </div>
 
@@ -248,7 +368,6 @@
       const name = document.getElementById('name').value;
       const email = document.getElementById('email').value;
       const specText = document.getElementById('specText').value;
-      const prefText = document.getElementById('prefText').value;
       const agree = document.getElementById('agree').checked;
 
       // Client-side validation
@@ -266,10 +385,6 @@
         showError('specText');
         hasError = true;
       }
-      if (!prefText.trim()) {
-        showError('prefText');
-        hasError = true;
-      }
       if (!agree) {
         showError('agree');
         hasError = true;
@@ -280,6 +395,33 @@
         if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
+
+      // 필터 조건 수집
+      function getChecked(name) {
+        return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(el => el.value);
+      }
+      const filterPrefs = {};
+      const ncs = document.getElementById('filterNcs').value.trim();
+      if (ncs) filterPrefs.ncs = ncs.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
+      const locations = getChecked('locations');
+      if (locations.length) filterPrefs.locations = locations;
+      const workFields = getChecked('work_fields');
+      if (workFields.length) filterPrefs.work_fields = workFields;
+      const employmentTypes = getChecked('employment_types');
+      if (employmentTypes.length) filterPrefs.employment_types = employmentTypes;
+      const recruitTypes = getChecked('recruit_types');
+      if (recruitTypes.length) filterPrefs.recruit_types = recruitTypes;
+      const educations = getChecked('educations');
+      if (educations.length) {
+        filterPrefs.educations = educations;
+        filterPrefs.education_mode = document.querySelector('input[name="education_mode"]:checked').value;
+      }
+      const isSubstitute = document.querySelector('input[name="is_substitute"]:checked').value;
+      if (isSubstitute !== '전체') filterPrefs.is_substitute = isSubstitute;
+      const orgType = document.getElementById('filterOrgType').value;
+      if (orgType) filterPrefs.org_types = [orgType];
+      const orgName = document.getElementById('filterOrgName').value.trim();
+      if (orgName) filterPrefs.org_names = orgName.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
 
       // Submit
       setLoading(true);
@@ -292,7 +434,7 @@
             name: name.trim(),
             email: email.trim().toLowerCase(),
             spec_text: specText.trim(),
-            pref_text: prefText.trim()
+            filter_prefs: filterPrefs
           })
         });
 
