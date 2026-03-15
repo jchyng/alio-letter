@@ -172,6 +172,7 @@ def hwp_to_pdf(path: str, ext: str) -> str:
         if result.returncode == 0 and tmp_pdf.exists():
             dest = Path(path).with_suffix(".pdf")
             shutil.move(str(tmp_pdf), dest)
+            Path(path).unlink(missing_ok=True)  # 변환 완료 후 원본 hwp/hwpx 제거
             return str(dest)
     print(f"  변환 실패: {Path(path).name}")
     return ""

@@ -18,6 +18,7 @@ Gemini를 사용해 공고 첨부파일(PDF)을 분석하고 결과를 raw/analy
 # Gemini 응답 구조:
 # {
 #   "bonus_points": "...",   → Posting에 upsert
+#   "notes": "...",          → Posting에 upsert
 #   "tracks": [              → analyses.jsonl에 트랙 단위로 저장
 #     {
 #       "track_name": "...",
@@ -53,6 +54,7 @@ PROMPT = """이 채용공고 PDF를 분석하여 아래 JSON 형식으로만 응
 
 {
   "bonus_points": "가산점 내용 전체를 한 문자열로 요약 (없으면 '해당 없음')",
+  "notes": "중요하지만 특정 항목으로 분류하기 어려운 정보 (예: 보수, 근무시간, 특이 조건). 없으면 빈 문자열.",
   "tracks": [
     {
       "track_name": "채용구분명 (예: 대졸수준-일반, 고졸수준, 별정직-기술담당원)",
@@ -104,9 +106,9 @@ def _pdf_path(posting: Posting) -> Path | None:
     return None
 
 
-def _parse_response(idx: int, raw: str) -> tuple[list[PostingTrack], str]:
+def _parse_response(idx: int, raw: str) -> tuple[list[PostingTrack], str, str]:
     """
-    Gemini 응답 JSON을 파싱하여 (tracks, bonus_points) 반환.
+    Gemini 응답 JSON을 파싱하여 (tracks, bonus_points, notes) 반환.
     응답에 ```json 블록이 포함된 경우 자동으로 추출.
     """
     text = raw.strip()
@@ -117,6 +119,7 @@ def _parse_response(idx: int, raw: str) -> tuple[list[PostingTrack], str]:
 
     data = json.loads(text)
     bonus_points: str = data.get("bonus_points", "")
+    notes: str = data.get("notes", "")
     tracks: list[PostingTrack] = []
     for t in data.get("tracks", []):
         track: PostingTrack = {
@@ -127,13 +130,13 @@ def _parse_response(idx: int, raw: str) -> tuple[list[PostingTrack], str]:
             "eligibility": t.get("eligibility", {}),
         }
         tracks.append(track)
-    return tracks, bonus_points
+    return tracks, bonus_points, notes
 
 
-def analyze_posting(posting: Posting, model: genai.GenerativeModel) -> tuple[list[PostingTrack], str]:
+def analyze_posting(posting: Posting, model: genai.GenerativeModel) -> tuple[list[PostingTrack], str, str]:
     """
     공고 1건을 Gemini로 분석.
-    반환: (tracks, bonus_points)
+    반환: (tracks, bonus_points, notes)
     """
     pdf_path = _pdf_path(posting)
     if pdf_path is None:
@@ -171,7 +174,7 @@ def analyze_all_postings() -> None:
 
         print(f"[{idx}] 분석 중: {pdf_path.name}")
         try:
-            tracks, bonus_points = analyze_posting(posting, model)
+            tracks, bonus_points, notes = analyze_posting(posting, model)
 
             # 트랙을 analyses.jsonl에 저장
             store.save_tracks(tracks)
@@ -179,6 +182,10 @@ def analyze_all_postings() -> None:
             # 가산점을 postings.jsonl에 반영
             if bonus_points:
                 store.upsert_detail({"idx": idx, "bonus_points": bonus_points})
+
+            # 기타 메모를 postings.jsonl에 반영
+            if notes:
+                store.upsert_detail({"idx": idx, "notes": notes})
 
             print(f"[{idx}] 저장 완료: 트랙 {len(tracks)}개")
             analyzed += 1

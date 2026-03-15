@@ -1,5 +1,5 @@
 """
-파이프라인 전체 흐름 1건 테스트.
+파이프라인 전체 흐름 N건 테스트.
 
 사용법:
     python test_pipeline.py
@@ -13,6 +13,7 @@ import store
 from analyzer import analyze_posting, _load_client
 
 RAW_DIR = Path(__file__).parent / "raw"
+TARGET_COUNT = 5  # 수집할 PDF 공고 수 (Gemini 무료 분당 5회 제한)
 
 
 def main() -> None:
@@ -22,10 +23,10 @@ def main() -> None:
     if analyses.exists():
         analyses.unlink()
 
-    # 1단계: PDF 첨부파일이 있는 공고 1건 찾기
-    print("=== 1단계: 목록 수집 (PDF 공고 1건 탐색) ===")
-    target = None
-    for page in range(1, 6):
+    # 1단계: PDF 첨부파일이 있는 공고 N건 찾기
+    print(f"=== 1단계: 목록 수집 (PDF 공고 {TARGET_COUNT}건 탐색) ===")
+    targets = []
+    for page in range(1, 20):
         rows = scraper._fetch_page(page)
         if not rows:
             break
@@ -36,39 +37,61 @@ def main() -> None:
             path = detail.get("attachment_path", "")
             has_pdf = ext == "pdf" and path or converted
             if has_pdf:
-                target = detail
+                targets.append(detail)
+                store.save(detail)
+                print(f"  [{len(targets)}] [{detail['idx']}] {detail['title']}")
+            if len(targets) >= TARGET_COUNT:
                 break
-        if target:
+        if len(targets) >= TARGET_COUNT:
             break
 
-    if not target:
+    if not targets:
         print("PDF 첨부파일이 있는 공고를 찾지 못했습니다.")
         return
 
-    store.save(target)
-    print(f"저장: [{target['idx']}] {target['title']}")
-    print(f"attachment_ext: {target.get('attachment_ext')}")
-    print(f"attachment_path: {target.get('attachment_path')}")
-    print(f"attachment_converted: {target.get('attachment_converted')}")
+    print(f"\n총 {len(targets)}건 수집 완료")
 
-    # 3단계: Gemini 분석
-    print("\n=== 3단계: Gemini 분석 ===")
-    posting = target
+    # 2단계: Gemini 분석
+    print(f"\n=== 2단계: Gemini 분석 ({len(targets)}건) ===")
     model = _load_client()
-    tracks, bonus_points = analyze_posting(posting, model)
+    analyzed = failed = 0
 
-    store.save_tracks(tracks)
-    if bonus_points:
-        store.upsert_detail({"idx": posting["idx"], "bonus_points": bonus_points})
+    for posting in targets:
+        idx = posting["idx"]
+        print(f"\n[{idx}] {posting['title']}")
+        try:
+            tracks, bonus_points, notes = analyze_posting(posting, model)
 
-    print(f"\n[결과]")
-    print(f"bonus_points: {bonus_points[:80]}...")
-    print(f"트랙 수: {len(tracks)}")
-    for t in tracks:
-        print(f"  - {t['track_name']}: {t['total_positions']}명 / {t['positions']}")
+            store.save_tracks(tracks)
+            if bonus_points:
+                store.upsert_detail({"idx": idx, "bonus_points": bonus_points})
+            if notes:
+                store.upsert_detail({"idx": idx, "notes": notes})
+
+            print(f"  bonus_points: {bonus_points[:60]}...")
+            if notes:
+                print(f"  notes: {notes[:60]}...")
+            print(f"  트랙 수: {len(tracks)}")
+            for t in tracks:
+                print(f"    - {t['track_name']}: {t['total_positions']}명 / {t['positions']}")
+            analyzed += 1
+        except Exception as e:
+            print(f"  실패: {e}")
+            failed += 1
+
+    print(f"\n=== 결과 요약 ===")
+    print(f"분석 완료: {analyzed}건 / 실패: {failed}건")
+
+    all_tracks = store.load_all_tracks()
+    total_positions = sum(t.get("total_positions", 0) for t in all_tracks)
+    print(f"총 트랙 수: {len(all_tracks)}")
+    print(f"총 채용인원: {total_positions}명")
+    if analyzed > 0:
+        print(f"공고당 평균 트랙: {len(all_tracks) / analyzed:.1f}개")
+        print(f"공고당 평균 채용인원: {total_positions / analyzed:.1f}명")
 
     print("\n=== analyses.jsonl ===")
-    for t in store.load_all_tracks():
+    for t in all_tracks:
         print(json.dumps(t, ensure_ascii=False))
 
 
