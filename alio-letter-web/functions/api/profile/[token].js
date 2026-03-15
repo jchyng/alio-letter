@@ -1,6 +1,6 @@
 /**
- * GET  /api/profile/:token  — MySQL에서 데이터 조회 (via Cloudflare Tunnel)
- * POST /api/profile/:token  — Gemini 재파싱 + MySQL UPDATE
+ * GET  /api/profile/:token  — D1에서 사용자 조회
+ * POST /api/profile/:token  — Gemini 재파싱 + D1 UPDATE
  */
 
 const CORS_HEADERS = {
@@ -23,16 +23,17 @@ export async function onRequestGet(context) {
   }
 
   try {
-    // TODO: MySQL에서 token으로 사용자 정보 조회
-    // const userData = await query('SELECT * FROM users WHERE token = ?', [token]);
-    
-    // 임시 더미 데이터 응답
+    const user = await env.DB.prepare(
+      'SELECT email, name, raw_spec_text, filter_prefs FROM users WHERE edit_token = ?'
+    ).bind(token).first();
+
+    if (!user) return jsonResponse({ error: 'not_found' }, 404);
+
     return jsonResponse({
-      name: '홍길동',
-      email: 'test@example.com',
-      raw_spec_text: '나의 기존 스펙 텍스트',
-      raw_pref_text: '나의 기존 희망 조건 텍스트',
-      subscription: { status: 'active', plan_type: 'premium' }
+      name: user.name,
+      email: user.email,
+      raw_spec_text: user.raw_spec_text,
+      filter_prefs: user.filter_prefs ? JSON.parse(user.filter_prefs) : {},
     });
 
   } catch (err) {
@@ -53,29 +54,46 @@ export async function onRequestPost(context) {
 
   try {
     const body = await context.request.json();
-    const { name, spec_text, pref_text } = body;
+    const { name, spec_text, filter_prefs } = body;
 
-    // 1. 검증
     if (!name || name.trim().length < 2) return jsonResponse({ success: false, error: '이름을 입력해주세요.' }, 400);
 
-    // 2. Gemini API 재파싱
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: `사용자 정보를 업데이트해줘. 이름: ${name}, 스펙: ${spec_text}, 희망조건: ${pref_text}` }]
-        }],
-        generationConfig: { responseMimeType: "application/json" }
-      })
-    });
+    // 토큰 유효성 확인
+    const user = await env.DB.prepare(
+      'SELECT id FROM users WHERE edit_token = ?'
+    ).bind(token).first();
+    if (!user) return jsonResponse({ success: false, error: 'not_found' }, 404);
 
-    const geminiData = await geminiRes.json();
-    const parsedData = JSON.parse(geminiData.candidates[0].content.parts[0].text);
+    // Gemini API 재파싱
+    let parsedSpec = null;
+    if (spec_text && spec_text.trim()) {
+      const geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `다음 사용자 스펙을 JSON으로 파싱해줘. 스펙: ${spec_text}` }] }],
+            generationConfig: { responseMimeType: 'application/json' },
+          }),
+        }
+      );
+      const geminiData = await geminiRes.json();
+      try {
+        parsedSpec = JSON.parse(geminiData.candidates[0].content.parts[0].text);
+      } catch (_) {}
+    }
 
-    // 3. MySQL UPDATE (Cloudflare Tunnel 도메인 이용)
-    // TODO: DB 업데이트 로직 구현
-    console.log('Parsed Data to update:', parsedData);
+    // D1 UPDATE
+    await env.DB.prepare(
+      `UPDATE users SET name=?, raw_spec_text=?, parsed_spec=?, filter_prefs=? WHERE edit_token=?`
+    ).bind(
+      name.trim(),
+      spec_text ? spec_text.trim() : null,
+      parsedSpec ? JSON.stringify(parsedSpec) : null,
+      filter_prefs ? JSON.stringify(filter_prefs) : null,
+      token
+    ).run();
 
     return jsonResponse({ success: true, message: '수정되었습니다.' });
 

@@ -4,7 +4,9 @@ pages_build_output_dir = "./src"
 
 [vars]
 GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
-DB_HOST = "db.yourdomain.com"
-DB_USER = "alio_user"
-DB_NAME = "alio_db"
-# DB_PASSWORD는 wrangler secret으로 관리하는 것을 권장합니다.
+# DB_HOST/DB_USER/DB_NAME 제거 — D1 바인딩으로 대체
+
+[[d1_databases]]
+binding = "DB"
+database_name = "alio-letter"
+database_id = ""   # wrangler d1 create alio-letter 실행 후 채울 것
