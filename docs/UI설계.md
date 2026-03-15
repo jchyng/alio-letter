@@ -21,7 +21,7 @@
 | 항목 | 내용 |
 |------|------|
 | 호스팅 | Cloudflare Pages (정적 HTML) |
-| 백엔드 | Cloudflare Functions (Gemini API + MySQL 직접 연결) |
+| 백엔드 | Cloudflare Functions (Gemini API + D1 바인딩) |
 | 반응형 | 모바일 우선 (취준생은 모바일 이용률 높음) |
 | 디자인 톤 | 깔끔하고 신뢰감 있는 톤. 공공기관 취업 도우미 느낌 |
 | 폰트 | Pretendard (또는 시스템 폰트 fallback) |
@@ -170,32 +170,24 @@ Step 3: 내 조건에 맞는 공고만 이메일로 수신
 - `is_self_reliance`: 자립준비청년 여부
 - `residence_region`: 거주 지역
 
-#### 2-3. 희망 조건 영역
+#### 2-3. 희망 조건 영역 (구조화 필터)
 
-| 필드명 | 입력 타입 | 필수 | 설명 |
-|--------|-----------|------|------|
-| 희망 조건 | `<textarea>` | O | 자유서술 형태 |
+자유서술 textarea 대신 체크박스·라디오·select UI로 구성. 값은 `filter_prefs` JSON으로 직렬화하여 POST.
 
-**입력 안내 문구 (placeholder 또는 도움말 박스):**
-```
-예시) 전기 또는 기계 직무, 서울/경기/부산 근무 희망,
-한전/한수원/가스공사 같은 에너지 공기업 관심,
-일반채용 또는 장애인채용, 연봉 5천만원 이상
+| 항목 | 컨트롤 |
+|------|--------|
+| 표준직무(NCS) | text input (자유입력, 쉼표 구분) |
+| 근무지 | checkbox grid (해외·서울·인천·대전·대구·부산·광주·울산·경기·강원·충남·충북·경북·경남·전남·전북·제주·세종) |
+| 근무분야 | checkbox grid (일반직·행정직·경영직·사무직·관리직·연구직·기술직·시설직·전산직·교수직·의사직·간호직·약무직·보건직·위생직·기능직·운영직·공무직·안전직·교원직·별정직·계약직·전문직·상담직·기타) |
+| 고용형태 | checkbox (정규직·무기계약직·비정규직·청년인턴(체험형)·청년인턴(채용형)) |
+| 채용구분 | checkbox (신입·경력·신입+경력·외국인 전형) |
+| 학력정보 | checkbox + AND/OR radio (학력무관·중졸이하·고졸·대졸(2~3년)·대졸(4년)·석사·박사) |
+| 대체인력유무 | radio (전체·예·아니오) |
+| 기관유형 | select (전체·공기업·준정부기관·기타공공기관·지방공기업·지방공단·기타) |
+| 기관명 | text input (자유입력, 쉼표 구분) |
 
-💡 아래 내용을 자유롭게 적어주세요:
-• 희망 직무 분야 (사무, ICT, 기계, 전기, 화학, 토목, 건축 등)
-• 희망 근무 지역 (시/도 단위)
-• 관심 기관 이름
-• 희망 채용구분 (일반, 장애, 보훈, 고졸 등)
-• 희망 연봉 수준 (선택. 예: 5천만원 이상)
-```
-
-**Gemini가 파싱할 구조화 필드:**
-- `preferred_fields`: 희망 직무 배열
-- `preferred_regions`: 희망 지역 배열
-- `preferred_types`: 희망 채용구분 배열
-- `preferred_institutions`: 관심 기관 배열
-- `preferred_min_salary`: 희망 최소 연봉 (만원 단위 정수, 예: 5000. 언급 없으면 null)
+**POST body에 포함되는 필드:**
+- `filter_prefs`: `PostingFilter` JSON (선택된 항목만 포함, 미선택 항목은 키 자체 제외 = "전체")
 
 #### 2-4. 폼 하단
 
@@ -211,12 +203,12 @@ Step 3: 내 조건에 맞는 공고만 이메일로 수신
 [클라이언트 기본 검증]
     - 이름: 빈 값 체크
     - 이메일: 형식 검증
-    - 스펙/희망조건: 빈 값 체크
+    - 스펙: 빈 값 체크
     - 동의 체크박스 확인
     ↓ 통과
 [로딩 상태 표시] "등록 처리 중..." (스피너 + 버튼 비활성화)
     ↓ fetch('/api/register', POST)
-[Cloudflare Function] → Gemini 파싱 → MySQL 저장 (via Tunnel) → 이메일 발송
+[Cloudflare Function] → Gemini 스펙 파싱 → D1 저장 → 이메일 발송
     ↓ 응답 수신
 [성공 시]
     - 성공 메시지 표시: "등록이 완료되었습니다!"
@@ -271,7 +263,7 @@ Step 3: 내 조건에 맞는 공고만 이메일로 수신
 | 이름 | `<input type="text">` | O | `name` |
 | 이메일 | `<input type="email">` | **X** (읽기전용, 회색 배경) | `email` |
 | 나의 스펙 | `<textarea>` | O | `raw_spec_text` |
-| 희망 조건 | `<textarea>` | O | `raw_pref_text` |
+| 희망 조건 | 구조화 필터 (체크박스·라디오·select) | O | `filter_prefs` JSON |
 
 - **이메일이 읽기전용인 이유**: 이메일은 계정 식별 키이므로 변경 불가. 변경이 필요하면 새로 등록해야 한다는 안내 문구 표시.
 - **스펙/희망조건**: 처음 입력한 원문(raw text)을 그대로 보여줌. 사용자가 수정 후 재제출하면 Gemini가 다시 파싱.
@@ -283,7 +275,7 @@ Step 3: 내 조건에 맞는 공고만 이메일로 수신
     ↓ [수정하기] 버튼 클릭
 [로딩 상태 표시]
     ↓ fetch(`/api/profile/${token}`, POST)
-[Cloudflare Function] → Gemini 재파싱 → MySQL UPDATE (via Tunnel)
+[Cloudflare Function] → Gemini 스펙 재파싱 → D1 UPDATE
     ↓
 [성공 시]
     - "정보가 수정되었습니다! 다음 공고 분석부터 변경된 정보가 반영됩니다."
@@ -424,10 +416,10 @@ Step 3: 내 조건에 맞는 공고만 이메일로 수신
 
 | 메서드 | 경로 | 역할 | 요청 Body | 응답 |
 |--------|------|------|-----------|------|
-| POST | `/api/register` | 신규 등록 | `{ name, email, spec_text, pref_text }` | `{ success: true }` 또는 `{ success: false, error: "메시지" }` |
+| POST | `/api/register` | 신규 등록 | `{ name, email, spec_text, filter_prefs }` | `{ success: true }` 또는 `{ success: false, error: "메시지" }` |
 | POST | `/api/send-magic-link` | 간편 로그인 링크 재발송 | `{ email }` | `{ success: true }` (보안을 위해 존재 여부 무관하게 항상 success 반환) |
-| GET | `/api/profile/:token` | 기존 데이터 조회 | — | `{ name, email, raw_spec_text, raw_pref_text, subscription }` 또는 `{ error: "invalid_token" }` |
-| POST | `/api/profile/:token` | 수정 저장 | `{ name, spec_text, pref_text }` | `{ success: true }` 또는 `{ success: false, error: "메시지" }` |
+| GET | `/api/profile/:token` | 기존 데이터 조회 | — | `{ name, email, raw_spec_text, filter_prefs }` 또는 `{ error: "invalid_token" }` |
+| POST | `/api/profile/:token` | 수정 저장 | `{ name, spec_text, filter_prefs }` | `{ success: true }` 또는 `{ success: false, error: "메시지" }` |
 | POST | `/api/subscribe/confirm` | 결제 확인 (빌링키 발급 + 첫 결제) | `{ customerKey, authKey, plan }` | `{ success: true, subscription }` |
 | POST | `/api/subscribe/cancel` | 구독 해지 | `{ token }` | `{ success: true }` |
 | POST | `/api/webhook/toss` | 토스 웹훅 수신 (결제 성공/실패 알림) | 토스페이먼츠 웹훅 payload | `200 OK` |
@@ -474,10 +466,6 @@ Step 3: 내 조건에 맞는 공고만 이메일로 수신
 매칭된 공고가 있을 때 발송되는 분석 리포트 이메일.
 Phase 1에서는 구현하지 않지만, 전체 흐름 이해를 위해 포함.
 
-> **HTML 목업 완성**: `mockup/email_report.html`
-> 한국남부발전 대졸수준-일반 트랙, 가상 사용자(김지원) 스펙 기반 실제 렌더링 예시.
-> 브라우저에서 직접 열어서 데스크탑/모바일 레이아웃 확인 가능.
->
 > **섹션 구성**: 헤더 → 공고 정보 배너 → 매칭 포지션 → 자격 요건 체크(✅/❌) → 서류 점수 예상(계산 근거 포함) → 가점 → 채용목표제(이전지역인재) → 직접 확인 필요 항목 → CTA 버튼 → 푸터
 >
 > **디자인 기준**: 최대 600px, table 기반 레이아웃(Gmail·Outlook 호환), inline 스타일, Pretendard 폰트, 모바일 375px 이하 대응
@@ -541,14 +529,13 @@ Phase 1에서는 구현하지 않지만, 전체 흐름 이해를 위해 포함.
 
 | 영역 | 데이터 출처 | 설명 |
 |------|------------|------|
-| 기관명/공고 제목 | `job_postings` + `institutions` | 기본 공고 정보 |
-| 접수기간 | `job_postings.application_start/end` | 마감일 강조 |
-| AI 요약 | `job_postings.ai_summary` | Gemini가 생성한 200자 요약 |
-| 매칭된 포지션 | `recruitment_sections` + `recruitment_units` | 사용자 조건에 맞는 섹션/직무 |
-| 자격 요건 체크 | `qualification_requirements` + `users` | 학력/병역/장애/보훈 등 적부 체크 |
-| 서류 점수 예상 | `selection_stages.sub_items` + `users` | 토익 환산점, 자격증 가점 등 |
-| 가점 항목 | `bonus_points` + `users` | 사용자에게 해당되는 가점 나열 |
-| 원문 링크 | `job_postings.source_url` | 잡알리오 상세 페이지 바로가기 |
+| 기관명/공고 제목 | `postings.org_name`, `postings.title` | 기본 공고 정보 |
+| 마감일 | `postings.deadline` | 마감일 강조 |
+| 매칭된 포지션 | `posting_tracks.track_name`, `positions` | 사용자 조건에 맞는 트랙/직무 |
+| 자격 요건 체크 | `posting_tracks.eligibility` + `users.parsed_spec` → `user_judgments.eligible/unmet` | 학력/병역/어학 등 적부 체크 |
+| 가점 항목 | `postings.bonus_points` + `users.parsed_spec` → `user_judgments.bonus_summary/bonus_reasons` | 사용자에게 해당되는 가점 |
+| Gemini 메모 | `postings.notes` | 분류 어려운 중요 정보 (보수 등) |
+| 원문 링크 | `postings.posting_url` | 잡알리오 상세 페이지 바로가기 |
 | 수정 링크 | `users.edit_token` | 프로필 수정 페이지 |
 
 ---
