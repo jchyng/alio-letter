@@ -76,6 +76,20 @@ class UserProfile(TypedDict, total=False):
     is_multicultural_child: bool    # 다문화가족자녀 여부
 
 
+class PostingFilter(TypedDict, total=False):
+    # 이미지의 필터 항목 (등록일·상태·키워드 제외)
+    ncs: list[str]               # 표준직무(NCS) (예: ["사무원", "IT개발"])
+    locations: list[str]         # 근무지 (예: ["서울특별시", "경기도", "해외"])
+    work_fields: list[str]       # 근무분야 (예: ["사무직", "전산직"])
+    employment_types: list[str]  # 고용형태 (예: ["정규직", "무기계약직"])
+    recruit_types: list[str]     # 채용구분 (예: ["신입", "신입+경력"])
+    educations: list[str]        # 학력정보 (예: ["대졸(4년)", "석사"])
+    education_mode: str          # "AND" | "OR" (단일 또는 중복)
+    is_substitute: str           # "예" | "아니오" | "전체"
+    org_types: list[str]         # 기관유형 (예: ["공기업", "준정부기관"])
+    org_names: list[str]         # 기관명 (예: ["한국전력공사"])
+
+
 class TrackJudgment(TypedDict, total=False):
     idx: int                # 공고 idx (FK)
     track_name: str

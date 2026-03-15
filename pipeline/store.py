@@ -6,13 +6,14 @@
 import json
 from pathlib import Path
 
-from models import Posting, PostingTrack, UserProfile, TrackJudgment
+from models import Posting, PostingFilter, PostingTrack, UserProfile, TrackJudgment
 
 RAW_DIR = Path(__file__).parent / "raw"
 POSTINGS_FILE = RAW_DIR / "postings.jsonl"
 ANALYSES_FILE = RAW_DIR / "analyses.jsonl"
 USER_PROFILE_FILE = RAW_DIR / "user_profile.json"
 JUDGMENTS_FILE = RAW_DIR / "judgments.jsonl"
+FILTER_FILE = RAW_DIR / "filter.json"
 
 
 def save(record: Posting) -> None:
@@ -122,3 +123,18 @@ def load_judgments() -> list[TrackJudgment]:
         return []
     with JUDGMENTS_FILE.open(encoding="utf-8") as f:
         return [json.loads(line) for line in f if line.strip()]
+
+
+def save_filter(f: PostingFilter) -> None:
+    """필터 조건을 단일 JSON 파일로 저장. 덮어쓴다."""
+    RAW_DIR.mkdir(exist_ok=True)
+    with FILTER_FILE.open("w", encoding="utf-8") as fp:
+        json.dump(f, fp, ensure_ascii=False, indent=2)
+
+
+def load_filter() -> PostingFilter | None:
+    """저장된 필터 조건 반환. 없으면 None."""
+    if not FILTER_FILE.exists():
+        return None
+    with FILTER_FILE.open(encoding="utf-8") as fp:
+        return json.load(fp)
