@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from scraper import convert_attachment
+from scraper import hwp_to_pdf as convert_attachment
 
 SAMPLE_DIR = Path(__file__).parent / "sample"
 

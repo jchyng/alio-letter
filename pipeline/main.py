@@ -13,7 +13,7 @@ import sys
 import scraper
 import store
 import user_input
-import matcher
+import judge
 from analyzer import analyze_all_postings
 
 MENU = """
@@ -51,8 +51,8 @@ def run(choice: str) -> None:
         if not profile:
             print("저장된 프로필이 없습니다. 먼저 사용자 정보를 입력하세요 (4번).")
             return
-        model = matcher._load_client()
-        matcher.judge_all_tracks(profile, model)
+        model = judge._load_client()
+        judge.judge_all_tracks(profile, model)
 
     else:
         print(f"알 수 없는 선택: {choice}")

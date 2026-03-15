@@ -2,17 +2,22 @@
 파이프라인 전체 흐름 N건 테스트.
 
 사용법:
-    python test_pipeline.py
+    cd pipeline
+    python scripts/test_pipeline.py
 """
 
 import json
+import sys
 from pathlib import Path
+
+# pipeline/ 디렉터리를 sys.path에 추가
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import scraper
 import store
 from analyzer import analyze_posting, _load_client
 
-RAW_DIR = Path(__file__).parent / "raw"
+RAW_DIR = Path(__file__).parent.parent / "raw"
 TARGET_COUNT = 5  # 수집할 PDF 공고 수 (Gemini 무료 분당 5회 제한)
 
 

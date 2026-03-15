@@ -23,12 +23,18 @@ export async function onRequestPost(context) {
       return jsonResponse({ success: false, error: '올바른 이메일 주소를 입력해주세요.' }, 400);
     }
 
-    // TODO: MySQL에서 해당 email로 사용자 조회 (Cloudflare Tunnel)
-    // 1. 해당 email이 DB에 있는지 확인
-    // 2. 존재한다면 edit_token 확인
-    // 3. 이메일 API (Resend/Gmail 등)를 통해 /profile/:edit_token 링크 발송
+    // D1에서 email로 edit_token 조회
+    const user = await context.env.DB.prepare(
+      'SELECT edit_token FROM users WHERE email = ?'
+    ).bind(email).first();
 
-    console.log(`Sending magic link to ${email}...`);
+    // 보안: 가입 여부와 무관하게 동일 응답 (계정 존재 여부 유추 방지)
+    if (user) {
+      const profileUrl = `https://alio-letter.pages.dev/profile/${user.edit_token}`;
+      // TODO: Resend API로 매직링크 이메일 발송
+      // await sendMagicLinkEmail(email, profileUrl);
+      console.log(`Magic link for ${email}: ${profileUrl}`);
+    }
 
     // 보안상 이메일이 실제 가입되었는지 여부와 상관없이 항상 성공 응답을 보냅니다.
     // (계정 존재 여부를 유추하는 해킹 방지)

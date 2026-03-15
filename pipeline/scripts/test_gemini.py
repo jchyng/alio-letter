@@ -2,8 +2,8 @@
 Gemini API로 첨부파일(hwp/hwpx/pdf/이미지) 분석 가능 여부 테스트.
 
 사용법:
-    python test_gemini.py <파일경로>
-    python test_gemini.py raw/attachments/297947_3034885.hwpx
+    python scripts/test_gemini.py <파일경로>
+    python scripts/test_gemini.py raw/attachments/297947_3034885.hwpx
 """
 
 import os
@@ -13,7 +13,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-load_dotenv(Path(__file__).parent / ".env")
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
@@ -55,7 +55,7 @@ def test_file(path: str) -> None:
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         # 인자 없으면 raw/attachments/ 에서 첫 번째 파일 자동 선택
-        attachments = list((Path(__file__).parent / "raw" / "attachments").iterdir())
+        attachments = list((Path(__file__).parent.parent / "raw" / "attachments").iterdir())
         attachments = [f for f in attachments if f.is_file() and not f.name.endswith(".txt")]
         if not attachments:
             print("raw/attachments/ 에 파일이 없습니다.")

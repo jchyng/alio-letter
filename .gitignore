@@ -14,7 +14,7 @@ yarn-error.log*
 dist/
 .dev.vars
 
-# Python 
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -22,6 +22,7 @@ __pycache__/
 env/
 venv/
 .env
+.pytest_cache/
 
 # Database
 *.sqlite
