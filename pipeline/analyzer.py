@@ -1,5 +1,5 @@
 """
-Gemini를 사용해 공고 첨부파일(PDF)을 분석하고 결과를 raw/analyses/{idx}.json에 저장.
+Gemini를 사용해 공고 첨부파일(PDF)을 분석하고 결과를 raw/analyses.jsonl에 저장.
 
 # 왜 scraper와 분리해서 실행하는가?
 #
@@ -15,12 +15,27 @@ Gemini를 사용해 공고 첨부파일(PDF)을 분석하고 결과를 raw/analy
 # → 오케스트레이션이 필요해지면 scraper/analyzer를 내부에서 합치지 말고
 #   main.py 같은 별도 진입점에서 순서를 제어한다.
 
+# Gemini 응답 구조:
+# {
+#   "bonus_points": "...",   → Posting에 upsert
+#   "tracks": [              → analyses.jsonl에 트랙 단위로 저장
+#     {
+#       "track_name": "...",
+#       "positions": "...",
+#       "total_positions": 79,
+#       "eligibility": { "education": "...", ... }
+#     },
+#     ...
+#   ]
+# }
+
 사용법:
     python analyzer.py
 """
 
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -28,12 +43,38 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 
 import store
-from models import Posting
+from models import Posting, PostingTrack
 
 load_dotenv(Path(__file__).parent / ".env")
 
-ANALYSES_DIR = Path(__file__).parent / "raw" / "analyses"
 MODEL_NAME = "gemini-2.5-flash"
+
+PROMPT = """이 채용공고 PDF를 분석하여 아래 JSON 형식으로만 응답하라. 설명 없이 JSON만 출력할 것.
+
+{
+  "bonus_points": "가산점 내용 전체를 한 문자열로 요약 (없으면 '해당 없음')",
+  "tracks": [
+    {
+      "track_name": "채용구분명 (예: 대졸수준-일반, 고졸수준, 별정직-기술담당원)",
+      "positions": "모집분야별 인원 원문 (예: 사무 8, ICT 7, 기계 25)",
+      "total_positions": 합계인원(정수),
+      "eligibility": {
+        "education": "학력 요건 원문",
+        "career": "경력 요건 원문",
+        "age": "연령 요건 원문",
+        "language": "어학 요건 원문",
+        "certificate": "자격증 요건 원문",
+        "etc": "기타 요건 원문 (병역, 결격사유 등)"
+      }
+    }
+  ]
+}
+
+규칙:
+- tracks 배열에 공고 내 모든 채용구분을 빠짐없이 포함할 것
+- 요건이 '제한 없음'이면 그대로 '제한 없음'으로 기재
+- bonus_points는 공고 전체에 적용되는 가산점을 하나의 문자열로 요약
+- JSON 외 다른 텍스트(```json 등 포함) 절대 출력 금지"""
 
 
 def _load_client() -> genai.GenerativeModel:
@@ -63,34 +104,47 @@ def _pdf_path(posting: Posting) -> Path | None:
     return None
 
 
-def analyze_posting(posting: Posting, model: genai.GenerativeModel) -> dict:
+def _parse_response(idx: int, raw: str) -> tuple[list[PostingTrack], str]:
     """
-    공고 1건을 Gemini로 분석하고 결과 dict를 반환.
-    TODO: 추출 항목(스키마) 확정 후 프롬프트 및 반환값 구체화 예정.
+    Gemini 응답 JSON을 파싱하여 (tracks, bonus_points) 반환.
+    응답에 ```json 블록이 포함된 경우 자동으로 추출.
+    """
+    text = raw.strip()
+    # Gemini가 ```json ... ``` 으로 감쌀 경우 대비
+    match = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
+    if match:
+        text = match.group(1).strip()
+
+    data = json.loads(text)
+    bonus_points: str = data.get("bonus_points", "")
+    tracks: list[PostingTrack] = []
+    for t in data.get("tracks", []):
+        track: PostingTrack = {
+            "idx": idx,
+            "track_name": t.get("track_name", ""),
+            "positions": t.get("positions", ""),
+            "total_positions": int(t.get("total_positions", 0)),
+            "eligibility": t.get("eligibility", {}),
+        }
+        tracks.append(track)
+    return tracks, bonus_points
+
+
+def analyze_posting(posting: Posting, model: genai.GenerativeModel) -> tuple[list[PostingTrack], str]:
+    """
+    공고 1건을 Gemini로 분석.
+    반환: (tracks, bonus_points)
     """
     pdf_path = _pdf_path(posting)
     if pdf_path is None:
         raise ValueError("분석할 PDF 없음")
 
     uploaded = genai.upload_file(str(pdf_path))
-
-    # TODO: 스키마 확정 후 구조화된 프롬프트로 교체
-    response = model.generate_content([
-        uploaded,
-        "이 공고문의 주요 내용을 한국어로 요약해줘. 직무, 자격요건, 지원방법 위주로.",
-    ])
-
-    return {
-        "idx": posting["idx"],
-        "pdf_path": str(pdf_path),
-        "raw_text": response.text,
-        # TODO: 스키마 확정 후 구조화된 필드 추가
-    }
+    response = model.generate_content([uploaded, PROMPT])
+    return _parse_response(posting["idx"], response.text)
 
 
 def analyze_all_postings() -> None:
-    ANALYSES_DIR.mkdir(parents=True, exist_ok=True)
-
     model = _load_client()
     postings = store.load_all()
 
@@ -103,9 +157,8 @@ def analyze_all_postings() -> None:
 
     for posting in postings:
         idx = posting.get("idx")
-        out_path = ANALYSES_DIR / f"{idx}.json"
 
-        if out_path.exists():
+        if store.is_analyzed(idx):
             print(f"[{idx}] 이미 분석됨, 건너뜀")
             skipped += 1
             continue
@@ -118,9 +171,16 @@ def analyze_all_postings() -> None:
 
         print(f"[{idx}] 분석 중: {pdf_path.name}")
         try:
-            result = analyze_posting(posting, model)
-            out_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-            print(f"[{idx}] 저장 완료: {out_path}")
+            tracks, bonus_points = analyze_posting(posting, model)
+
+            # 트랙을 analyses.jsonl에 저장
+            store.save_tracks(tracks)
+
+            # 가산점을 postings.jsonl에 반영
+            if bonus_points:
+                store.upsert_detail({"idx": idx, "bonus_points": bonus_points})
+
+            print(f"[{idx}] 저장 완료: 트랙 {len(tracks)}개")
             analyzed += 1
         except Exception as e:
             print(f"[{idx}] 분석 실패: {e}")

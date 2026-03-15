@@ -6,10 +6,11 @@
 import json
 from pathlib import Path
 
-from models import Posting
+from models import Posting, PostingTrack
 
 RAW_DIR = Path(__file__).parent / "raw"
 POSTINGS_FILE = RAW_DIR / "postings.jsonl"
+ANALYSES_FILE = RAW_DIR / "analyses.jsonl"
 
 
 def save(record: Posting) -> None:
@@ -57,6 +58,29 @@ def upsert_detail(posting: Posting) -> None:
     with POSTINGS_FILE.open("w", encoding="utf-8") as f:
         for r in records:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+
+def save_tracks(tracks: list[PostingTrack]) -> None:
+    """분석된 트랙 여러 건 저장. 트랙 1개 = 1행."""
+    if not tracks:
+        return
+    RAW_DIR.mkdir(exist_ok=True)
+    with ANALYSES_FILE.open("a", encoding="utf-8") as f:
+        for track in tracks:
+            f.write(json.dumps(track, ensure_ascii=False) + "\n")
+
+
+def load_all_tracks() -> list[PostingTrack]:
+    """저장된 트랙 전체 반환."""
+    if not ANALYSES_FILE.exists():
+        return []
+    with ANALYSES_FILE.open(encoding="utf-8") as f:
+        return [json.loads(line) for line in f if line.strip()]
+
+
+def is_analyzed(idx: int) -> bool:
+    """해당 공고(idx)가 이미 분석됐는지 확인."""
+    return any(t.get("idx") == idx for t in load_all_tracks())
 
 
 def clear() -> None:
