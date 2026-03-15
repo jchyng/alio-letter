@@ -6,11 +6,13 @@
 import json
 from pathlib import Path
 
-from models import Posting, PostingTrack
+from models import Posting, PostingTrack, UserProfile, TrackJudgment
 
 RAW_DIR = Path(__file__).parent / "raw"
 POSTINGS_FILE = RAW_DIR / "postings.jsonl"
 ANALYSES_FILE = RAW_DIR / "analyses.jsonl"
+USER_PROFILE_FILE = RAW_DIR / "user_profile.json"
+JUDGMENTS_FILE = RAW_DIR / "judgments.jsonl"
 
 
 def save(record: Posting) -> None:
@@ -87,3 +89,36 @@ def clear() -> None:
     """파일 초기화 (테스트용)."""
     if POSTINGS_FILE.exists():
         POSTINGS_FILE.unlink()
+
+
+def save_user_profile(profile: UserProfile) -> None:
+    """사용자 프로필을 단일 JSON 파일로 저장. 덮어쓴다."""
+    RAW_DIR.mkdir(exist_ok=True)
+    with USER_PROFILE_FILE.open("w", encoding="utf-8") as f:
+        json.dump(profile, f, ensure_ascii=False, indent=2)
+
+
+def load_user_profile() -> UserProfile | None:
+    """저장된 사용자 프로필 반환. 없으면 None."""
+    if not USER_PROFILE_FILE.exists():
+        return None
+    with USER_PROFILE_FILE.open(encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_judgments(judgments: list[TrackJudgment]) -> None:
+    """판정 결과 전체를 덮어쓴다 (재실행 시 최신 결과로 갱신)."""
+    if not judgments:
+        return
+    RAW_DIR.mkdir(exist_ok=True)
+    with JUDGMENTS_FILE.open("w", encoding="utf-8") as f:
+        for j in judgments:
+            f.write(json.dumps(j, ensure_ascii=False) + "\n")
+
+
+def load_judgments() -> list[TrackJudgment]:
+    """저장된 판정 결과 전체 반환."""
+    if not JUDGMENTS_FILE.exists():
+        return []
+    with JUDGMENTS_FILE.open(encoding="utf-8") as f:
+        return [json.loads(line) for line in f if line.strip()]

@@ -12,6 +12,8 @@ import sys
 
 import scraper
 import store
+import user_input
+import matcher
 from analyzer import analyze_all_postings
 
 MENU = """
@@ -19,6 +21,8 @@ MENU = """
 1. 공고 목록 수집
 2. 상세 공고 수집
 3. 분석 (Gemini)
+4. 사용자 정보 입력/수정
+5. 자격요건 판정
 0. 종료
 """
 
@@ -38,6 +42,17 @@ def run(choice: str) -> None:
 
     elif choice == "3":
         analyze_all_postings()
+
+    elif choice == "4":
+        user_input.collect()
+
+    elif choice == "5":
+        profile = store.load_user_profile()
+        if not profile:
+            print("저장된 프로필이 없습니다. 먼저 사용자 정보를 입력하세요 (4번).")
+            return
+        model = matcher._load_client()
+        matcher.judge_all_tracks(profile, model)
 
     else:
         print(f"알 수 없는 선택: {choice}")
