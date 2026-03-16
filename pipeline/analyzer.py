@@ -41,7 +41,8 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 import db
 from models import Posting, PostingTrack
@@ -57,12 +58,12 @@ PROMPT = """이 채용공고 PDF를 분석하여 아래 JSON 형식으로만 응
   "notes": "중요하지만 특정 항목으로 분류하기 어려운 정보 (예: 보수, 근무시간, 특이 조건). 없으면 빈 문자열.",
   "tracks": [
     {
-      "track_name": "채용구분명 (예: 대졸수준-일반, 고졸수준, 별정직-기술담당원)",
+      "track_name": "자격요건이 분리된 채용단위명. 아래 규칙 참고.",
       "positions": "모집분야별 인원 원문 (예: 사무 8, ICT 7, 기계 25)",
       "total_positions": 합계인원(정수),
       "eligibility": {
         "education": "학력 요건 원문",
-        "career": "경력 요건 원문",
+        "career": "경력 요건 원문 (주요업무·직무내용은 제외. 순수하게 요구되는 경력 연수·분야만)",
         "age": "연령 요건 원문",
         "language": "어학 요건 원문",
         "certificate": "자격증 요건 원문",
@@ -74,18 +75,21 @@ PROMPT = """이 채용공고 PDF를 분석하여 아래 JSON 형식으로만 응
 
 규칙:
 - tracks 배열에 공고 내 모든 채용구분을 빠짐없이 포함할 것
+- track_name은 자격요건 표의 '구분' 컬럼 값을 우선 사용. '구분'이 없으면 '채용분야' 컬럼 값 사용
+  - 구분(대분류)과 채용분야(세부직종)가 별도 컬럼으로 나뉠 경우: "구분(채용분야)" 형태로 결합 (예: 시니어인턴(조경), 신입(사무행정))
+  - 직급명(6급, 4급, 주임 등)은 track_name에 포함하지 않음
 - 요건이 '제한 없음'이면 그대로 '제한 없음'으로 기재
 - bonus_points는 공고 전체에 적용되는 가산점을 하나의 문자열로 요약
+- PDF에 명시된 내용만 기재. 추론하거나 없는 내용을 추가하지 말 것
 - JSON 외 다른 텍스트(```json 등 포함) 절대 출력 금지"""
 
 
-def _load_client() -> genai.GenerativeModel:
+def _load_client() -> genai.Client:
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         print("GEMINI_API_KEY가 .env에 없습니다.")
         sys.exit(1)
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel(MODEL_NAME)
+    return genai.Client(api_key=api_key)
 
 
 def _pdf_path(posting: Posting) -> Path | None:
@@ -122,18 +126,21 @@ def _parse_response(idx: int, raw: str) -> tuple[list[PostingTrack], str, str]:
     notes: str = data.get("notes", "")
     tracks: list[PostingTrack] = []
     for t in data.get("tracks", []):
+        eligibility = t.get("eligibility", {})
+        # 빈 문자열 → '해당 없음' 정규화 (모델이 간헐적으로 빈 값을 반환하는 경우 대비)
+        eligibility = {k: (v if v else "해당 없음") for k, v in eligibility.items()}
         track: PostingTrack = {
             "idx": idx,
             "track_name": t.get("track_name", ""),
             "positions": t.get("positions", ""),
             "total_positions": int(t.get("total_positions", 0)),
-            "eligibility": t.get("eligibility", {}),
+            "eligibility": eligibility,
         }
         tracks.append(track)
     return tracks, bonus_points, notes
 
 
-def analyze_posting(posting: Posting, model: genai.GenerativeModel) -> tuple[list[PostingTrack], str, str]:
+def analyze_posting(posting: Posting, client: genai.Client) -> tuple[list[PostingTrack], str, str]:
     """
     공고 1건을 Gemini로 분석.
     반환: (tracks, bonus_points, notes)
@@ -142,13 +149,29 @@ def analyze_posting(posting: Posting, model: genai.GenerativeModel) -> tuple[lis
     if pdf_path is None:
         raise ValueError("분석할 PDF 없음")
 
-    uploaded = genai.upload_file(str(pdf_path))
-    response = model.generate_content([uploaded, PROMPT])
+    with open(pdf_path, "rb") as f:
+        pdf_bytes = f.read()
+
+    response = client.models.generate_content(
+        model=MODEL_NAME,
+        contents=[
+            types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
+            PROMPT,
+        ],
+        config=types.GenerateContentConfig(
+            # thinking_budget=0: 추출 태스크에서 hallucination 방지.
+            # 2.5-flash는 추론(thinking) 모델이라 chain-of-thought 과정에서
+            # 다른 섹션(etc의 규정 조항 등)을 참조해 없는 내용을 education 등에 추가함.
+            # thinking을 끄면 단순 추출 모드로 동작해 PDF 원문만 그대로 반환.
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
+            temperature=0.0,  # 응답 일관성 확보 — 같은 PDF에서 매번 동일한 결과 보장
+        ),
+    )
     return _parse_response(posting["idx"], response.text)
 
 
 def analyze_all_postings() -> None:
-    model = _load_client()
+    client = _load_client()
     postings = db.load_all()
 
     if not postings:
@@ -174,7 +197,7 @@ def analyze_all_postings() -> None:
 
         print(f"[{idx}] 분석 중: {pdf_path.name}")
         try:
-            tracks, bonus_points, notes = analyze_posting(posting, model)
+            tracks, bonus_points, notes = analyze_posting(posting, client)
 
             db.save_tracks(tracks)
 
