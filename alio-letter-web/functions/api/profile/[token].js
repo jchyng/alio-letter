@@ -84,15 +84,17 @@ export async function onRequestPost(context) {
       } catch (_) {}
     }
 
-    // D1 UPDATE
+    // D1 UPDATE — spec_text를 보냈을 때만 parsed_spec 갱신 (없으면 기존 값 유지)
+    const specProvided = spec_text && spec_text.trim();
     await env.DB.prepare(
-      `UPDATE users SET name=?, raw_spec_text=?, parsed_spec=?, filter_prefs=? WHERE edit_token=?`
+      specProvided
+        ? `UPDATE users SET name=?, raw_spec_text=?, parsed_spec=?, filter_prefs=? WHERE edit_token=?`
+        : `UPDATE users SET name=?, filter_prefs=? WHERE edit_token=?`
     ).bind(
-      name.trim(),
-      spec_text ? spec_text.trim() : null,
-      parsedSpec ? JSON.stringify(parsedSpec) : null,
-      filter_prefs ? JSON.stringify(filter_prefs) : null,
-      token
+      ...(specProvided
+        ? [name.trim(), spec_text.trim(), parsedSpec ? JSON.stringify(parsedSpec) : null,
+           filter_prefs ? JSON.stringify(filter_prefs) : null, token]
+        : [name.trim(), filter_prefs ? JSON.stringify(filter_prefs) : null, token])
     ).run();
 
     return jsonResponse({ success: true, message: '수정되었습니다.' });
