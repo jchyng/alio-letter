@@ -80,6 +80,8 @@ def run(skip_scrape: bool = False) -> None:
     print(f"[daily] 사용자 {len(users)}명 처리 시작")
     # 상세 크롤링 완료된 공고만 필터링·판정 대상 (employment_type NULL인 것 제외)
     all_postings = db.load_fetched()
+    # idx → posting_id 매핑 (사용자 루프 밖에서 1회 조회 — N×M 쿼리 방지)
+    idx_to_posting_id = db.load_posting_id_map()
 
     gemini_model = _load_gemini()
 
@@ -105,14 +107,9 @@ def run(skip_scrape: bool = False) -> None:
         if gemini_model and profile:
             already_judged = db.load_judged_track_ids(user_id)
             for posting in matched:
-                # posting_id 조회 (DB 내부 ID)
-                rows = db.fetchall(
-                    "SELECT posting_id FROM postings WHERE alio_id = ?",
-                    (str(posting.get("idx", "")),),
-                )
-                if not rows:
+                posting_id = idx_to_posting_id.get(posting.get("idx"))
+                if not posting_id:
                     continue
-                posting_id = rows[0]["posting_id"]
                 tracks = db.load_tracks_by_posting(posting_id)
                 if not tracks:
                     continue

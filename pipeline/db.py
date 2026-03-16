@@ -204,6 +204,18 @@ def load_unfetched() -> list[dict]:
             for r in fetchall("SELECT * FROM postings WHERE employment_type IS NULL")]
 
 
+def load_posting_id_map() -> dict[int, int]:
+    """alio_id(=idx) → posting_id 매핑 반환. daily.py에서 루프 전 1회 호출로 N×M 쿼리 방지."""
+    rows = fetchall("SELECT posting_id, alio_id FROM postings")
+    result = {}
+    for row in rows:
+        try:
+            result[int(row["alio_id"])] = row["posting_id"]
+        except (ValueError, TypeError):
+            pass
+    return result
+
+
 def is_empty() -> bool:
     """저장된 공고가 없으면 True."""
     rows = fetchall("SELECT COUNT(*) AS cnt FROM postings")
