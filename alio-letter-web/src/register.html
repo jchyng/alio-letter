@@ -7,68 +7,103 @@
   <meta name="description" content="스펙과 희망조건을 등록하고 맞춤 채용공고 알림을 받아보세요.">
   <link rel="stylesheet" href="/style.css">
   <style>
-    .page-header {
-      padding: 40px 0 8px;
-    }
-    .page-header h1 {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: var(--gray-900);
-      letter-spacing: -0.02em;
-    }
-    .page-header p {
-      color: var(--gray-500);
-      margin-top: 8px;
-      font-size: 0.9375rem;
-    }
-    .register-form {
-      padding: 32px 0 64px;
-    }
+    .page-header { padding: 40px 0 8px; }
+    .page-header h1 { font-size: 1.5rem; font-weight: 800; color: var(--gray-900); letter-spacing: -0.02em; }
+    .page-header p { color: var(--gray-500); margin-top: 8px; font-size: 0.9375rem; }
+
+    .register-form { padding: 32px 0 64px; }
+
+    .form-section { margin-bottom: 36px; }
     .form-section-label {
-      font-size: 1.125rem;
-      font-weight: 700;
-      color: var(--gray-800);
-      margin-bottom: 16px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid var(--primary);
-      display: inline-block;
+      font-size: 1.125rem; font-weight: 700; color: var(--gray-800);
+      margin-bottom: 16px; padding-bottom: 8px;
+      border-bottom: 2px solid var(--primary); display: inline-block;
     }
-    .form-section {
-      margin-bottom: 36px;
+
+    /* 스펙 서브섹션 */
+    .spec-sub {
+      margin-bottom: 16px; padding: 16px;
+      background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius);
     }
-    .success-view {
-      text-align: center;
-      padding: 80px 0;
-      display: none;
+    .spec-sub-title {
+      font-size: 0.8125rem; font-weight: 700; color: var(--gray-500);
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px;
     }
+    .spec-sub .form-group { margin-bottom: 14px; }
+    .spec-sub .form-group:last-child { margin-bottom: 0; }
+
+    /* 2컬럼 그리드 */
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 500px) { .form-row-2 { grid-template-columns: 1fr; } }
+
+    /* 기관유형+기관명 행 */
+    .form-row-org { display: grid; grid-template-columns: 160px 1fr; gap: 14px; align-items: start; }
+    @media (max-width: 500px) { .form-row-org { grid-template-columns: 1fr; } }
+
+    /* 뱃지 입력 */
+    .badge-input-wrap { display: flex; gap: 8px; align-items: stretch; }
+    .badge-input-wrap .form-input { margin: 0; }
+    .badge-input-wrap .form-input.narrow { flex: 0 0 72px; width: 72px; }
+    .badge-input-wrap .form-select-sm {
+      flex: 0 0 120px; padding: 10px 32px 10px 12px;
+      border: 1.5px solid var(--gray-300); border-radius: var(--radius);
+      font-size: 0.9rem; color: var(--gray-800); background: #fff;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center; cursor: pointer;
+    }
+    .btn-add {
+      padding: 0 16px; height: 44px; background: var(--primary); color: #fff;
+      border: none; border-radius: var(--radius); font-size: 0.875rem; font-weight: 600;
+      cursor: pointer; white-space: nowrap; flex-shrink: 0;
+    }
+    .btn-add:hover { background: var(--primary-dark); }
+
+    .badge-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 8px 4px 12px;
+      background: var(--primary-light); color: #1D4ED8;
+      border-radius: 20px; font-size: 0.8125rem; font-weight: 500;
+    }
+    .badge-x {
+      background: none; border: none; cursor: pointer;
+      color: #3B82F6; font-size: 1.1rem; line-height: 1;
+      padding: 0; opacity: 0.6; transition: opacity 0.1s;
+    }
+    .badge-x:hover { opacity: 1; }
+
+    /* 기관명 검색 드롭다운 */
+    .org-search-wrap { position: relative; }
+    .org-dropdown {
+      position: absolute; top: 100%; left: 0; right: 0;
+      background: #fff; border: 1.5px solid var(--primary); border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+      max-height: 200px; overflow-y: auto; z-index: 50; box-shadow: var(--shadow-md);
+    }
+    .org-dropdown.hidden { display: none; }
+    .org-dropdown-item {
+      padding: 10px 14px; font-size: 0.9375rem; cursor: pointer; color: var(--gray-700);
+    }
+    .org-dropdown-item:hover { background: var(--primary-50); color: #1D4ED8; }
+    .org-dropdown-empty { padding: 10px 14px; font-size: 0.875rem; color: var(--gray-400); }
+
+    /* 선택 레이블 */
+    .label-opt { font-size: 0.75rem; font-weight: 400; color: var(--gray-400); margin-left: 4px; }
+
+    /* 성공 화면 */
+    .success-view { text-align: center; padding: 80px 0; display: none; }
     .success-icon {
-      width: 72px;
-      height: 72px;
-      background: var(--success-light);
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      margin-bottom: 20px;
+      width: 72px; height: 72px; background: var(--success-light); border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 2rem; margin-bottom: 20px;
     }
-    .success-view h2 {
-      font-size: 1.375rem;
-      font-weight: 700;
-      color: var(--gray-900);
-      margin-bottom: 12px;
-    }
-    .success-view p {
-      color: var(--gray-500);
-      line-height: 1.7;
-      max-width: 400px;
-      margin: 0 auto;
-    }
+    .success-view h2 { font-size: 1.375rem; font-weight: 700; color: var(--gray-900); margin-bottom: 12px; }
+    .success-view p { color: var(--gray-500); line-height: 1.7; max-width: 400px; margin: 0 auto; }
   </style>
 </head>
 <body>
 
-  <!-- Navigation -->
   <nav class="nav">
     <div class="container">
       <a href="/" class="nav-logo">Alio<span>-Letter</span></a>
@@ -78,14 +113,12 @@
 
   <div class="container">
 
-    <!-- Form View -->
     <div id="formView">
       <div class="page-header">
         <h1>회원등록</h1>
-        <p>스펙과 희망조건을 자유롭게 적어주세요. AI가 알아서 정리합니다.</p>
+        <p>스펙과 희망조건을 입력하면 AI가 맞는 공고를 골라드립니다.</p>
       </div>
 
-      <!-- Alert Messages -->
       <div id="alertMsg" class="alert mt-4"></div>
 
       <form id="registerForm" class="register-form" novalidate>
@@ -93,50 +126,143 @@
         <!-- 기본정보 -->
         <div class="form-section">
           <div class="form-section-label">기본정보</div>
-
           <div class="form-group">
             <label class="form-label" for="name">이름 <span class="required">*</span></label>
-            <input type="text" id="name" name="name" class="form-input" placeholder="홍길동" maxlength="20" required>
+            <input type="text" id="name" class="form-input" placeholder="홍길동" maxlength="20" required>
             <div class="form-error">이름을 입력해주세요 (2~20자)</div>
           </div>
-
           <div class="form-group">
             <label class="form-label" for="email">이메일 <span class="required">*</span></label>
-            <input type="email" id="email" name="email" class="form-input" placeholder="example@email.com" required>
+            <input type="email" id="email" class="form-input" placeholder="example@email.com" required>
             <div class="form-error">올바른 이메일 주소를 입력해주세요</div>
           </div>
         </div>
 
         <!-- 나의 스펙 -->
         <div class="form-section">
-          <div class="form-section-label">나의 스펙</div>
+          <div class="form-section-label">나의 스펙 <span class="label-opt">선택 — 입력할수록 매칭 정확도가 높아집니다</span></div>
 
-          <div class="form-group">
-            <label class="form-label" for="specText">나의 스펙</label>
-            <textarea id="specText" name="spec_text" class="form-textarea"
-              placeholder="예시) 4년제 전기공학 졸업, 전기기사/소방설비기사 보유, 토익 820점, 토익스피킹 Lv7, 군필, 등록장애인 해당"></textarea>
-            <div class="form-hint-box">
-              아래 내용을 자유롭게 적어주세요:<br>
-              &bull; 최종 학력 + 전공 (예: 4년제 전기공학과 졸업)<br>
-              &bull; 생년월일 또는 나이 (선택. 연령 제한 체크에 사용)<br>
-              &bull; 보유 자격증<br>
-              &bull; 어학 성적 (토익, 토익스피킹, OPIc 등)<br>
-              &bull; 병역 상태 (군필/미필/면제/해당없음)<br>
-              &bull; 해당되는 항목: 등록장애인, 취업지원대상자(보훈), 저소득층, 북한이탈주민, 다문화가족, 자립준비청년
+          <!-- 학력 -->
+          <div class="spec-sub">
+            <div class="spec-sub-title">학력</div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label" for="specEdu">최종학력</label>
+                <select id="specEdu" class="form-select">
+                  <option value="">선택</option>
+                  <option value="고졸">고졸</option>
+                  <option value="전문대졸(2~3년)">전문대졸(2~3년)</option>
+                  <option value="대졸(4년)">대졸(4년)</option>
+                  <option value="석사">석사</option>
+                  <option value="박사">박사</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="specMajor">전공 <span class="label-opt">선택</span></label>
+                <input type="text" id="specMajor" class="form-input" placeholder="예: 전기공학, 경영학">
+              </div>
             </div>
-            <div class="form-error">스펙 정보를 입력해주세요</div>
+          </div>
+
+          <!-- 기본 신상 -->
+          <div class="spec-sub">
+            <div class="spec-sub-title">기본 정보</div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label" for="specBirth">출생연도 <span class="label-opt">선택</span></label>
+                <input type="number" id="specBirth" class="form-input" placeholder="예: 1998" min="1950" max="2010">
+                <div class="form-hint">연령 제한 공고 체크에 사용</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">병역</label>
+                <div class="radio-group" style="margin-top:6px">
+                  <label class="form-radio"><input type="radio" name="specMil" value="군필"><span>군필</span></label>
+                  <label class="form-radio"><input type="radio" name="specMil" value="미필"><span>미필</span></label>
+                  <label class="form-radio"><input type="radio" name="specMil" value="면제"><span>면제</span></label>
+                  <label class="form-radio"><input type="radio" name="specMil" value="해당없음" checked><span>해당없음</span></label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 경력 -->
+          <div class="spec-sub">
+            <div class="spec-sub-title">경력</div>
+            <div class="form-group">
+              <label class="form-label" for="specCareerYears">총 경력</label>
+              <select id="specCareerYears" class="form-select">
+                <option value="0">신입 (경력 없음)</option>
+                <option value="1">1년</option>
+                <option value="2">2년</option>
+                <option value="3">3년</option>
+                <option value="4">4년</option>
+                <option value="5">5년</option>
+                <option value="6">6년</option>
+                <option value="7">7년</option>
+                <option value="10">10년 이상</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">분야별 경력 <span class="label-opt">선택</span></label>
+              <div class="badge-input-wrap">
+                <input type="text" id="careerField" class="form-input" placeholder="분야명 (예: IT개발, 회계, 기계)">
+                <input type="number" id="careerYrs" class="form-input narrow" placeholder="년" min="1" max="40">
+                <button type="button" id="addCareer" class="btn-add">추가</button>
+              </div>
+              <div id="careerBadges" class="badge-wrap"></div>
+            </div>
+          </div>
+
+          <!-- 자격증 -->
+          <div class="spec-sub">
+            <div class="spec-sub-title">자격증 <span class="label-opt">선택</span></div>
+            <div class="form-group">
+              <div class="badge-input-wrap">
+                <input type="text" id="certInput" class="form-input" placeholder="예: 전기기사, 정보처리기사">
+                <button type="button" id="addCert" class="btn-add">추가</button>
+              </div>
+              <div id="certBadges" class="badge-wrap"></div>
+              <div class="form-hint">Enter 또는 추가 버튼으로 등록, 여러 개 가능</div>
+            </div>
+          </div>
+
+          <!-- 어학 -->
+          <div class="spec-sub">
+            <div class="spec-sub-title">어학성적 <span class="label-opt">선택</span></div>
+            <div class="form-group">
+              <div class="badge-input-wrap">
+                <select id="langType" class="form-select-sm">
+                  <option value="토익">토익</option>
+                  <option value="토익스피킹">토익스피킹</option>
+                  <option value="OPIc">OPIc</option>
+                  <option value="TEPS">TEPS</option>
+                  <option value="기타어학">기타</option>
+                </select>
+                <input type="text" id="langScore" class="form-input" placeholder="점수/등급 (예: 820, Lv7, IH)">
+                <button type="button" id="addLang" class="btn-add">추가</button>
+              </div>
+              <div id="langBadges" class="badge-wrap"></div>
+            </div>
+          </div>
+
+          <!-- 법정 우대사항 -->
+          <div class="spec-sub">
+            <div class="spec-sub-title">법정 우대사항 <span class="label-opt">해당되는 항목 선택</span></div>
+            <div class="checkbox-grid">
+              <label class="form-checkbox"><input type="checkbox" name="specLegal" value="취업지원대상자(보훈)"><span>취업지원대상자(보훈)</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="specLegal" value="등록장애인(경증)"><span>등록장애인(경증)</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="specLegal" value="등록장애인(중증)"><span>등록장애인(중증)</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="specLegal" value="저소득층"><span>저소득층</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="specLegal" value="북한이탈주민"><span>북한이탈주민</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="specLegal" value="다문화가족자녀"><span>다문화가족자녀</span></label>
+              <label class="form-checkbox"><input type="checkbox" name="specLegal" value="자립준비청년"><span>자립준비청년</span></label>
+            </div>
           </div>
         </div>
 
         <!-- 희망 조건 -->
         <div class="form-section">
-          <div class="form-section-label">희망 조건</div>
-
-          <!-- 표준직무(NCS) -->
-          <div class="form-group">
-            <label class="form-label" for="filterNcs">표준직무(NCS)</label>
-            <input type="text" id="filterNcs" class="form-input" placeholder="예: 사무원, IT개발">
-          </div>
+          <div class="form-section-label">희망 조건 <span class="label-opt">선택 — 미선택 시 전체 대상</span></div>
 
           <!-- 근무지 -->
           <div class="form-group">
@@ -220,7 +346,7 @@
 
           <!-- 학력정보 -->
           <div class="form-group">
-            <label class="form-label">학력정보</label>
+            <label class="form-label">지원 가능 학력</label>
             <div class="checkbox-grid">
               <label class="form-checkbox"><input type="checkbox" name="educations" value="학력무관"><span>학력무관</span></label>
               <label class="form-checkbox"><input type="checkbox" name="educations" value="중졸이하"><span>중졸이하</span></label>
@@ -229,11 +355,6 @@
               <label class="form-checkbox"><input type="checkbox" name="educations" value="대졸(4년)"><span>대졸(4년)</span></label>
               <label class="form-checkbox"><input type="checkbox" name="educations" value="석사"><span>석사</span></label>
               <label class="form-checkbox"><input type="checkbox" name="educations" value="박사"><span>박사</span></label>
-            </div>
-            <div class="radio-group mt-2">
-              <span class="form-label-sm">조건:</span>
-              <label class="form-radio"><input type="radio" name="education_mode" value="OR" checked><span>OR (하나라도 해당)</span></label>
-              <label class="form-radio"><input type="radio" name="education_mode" value="AND"><span>AND (모두 해당)</span></label>
             </div>
           </div>
 
@@ -247,24 +368,30 @@
             </div>
           </div>
 
-          <!-- 기관유형 -->
+          <!-- 기관유형 + 기관명 (같은 행) -->
           <div class="form-group">
-            <label class="form-label" for="filterOrgType">기관유형</label>
-            <select id="filterOrgType" class="form-select">
-              <option value="">전체</option>
-              <option value="공기업">공기업</option>
-              <option value="준정부기관">준정부기관</option>
-              <option value="기타공공기관">기타공공기관</option>
-              <option value="지방공기업">지방공기업</option>
-              <option value="지방공단">지방공단</option>
-              <option value="기타">기타</option>
-            </select>
-          </div>
-
-          <!-- 기관명 -->
-          <div class="form-group">
-            <label class="form-label" for="filterOrgName">기관명</label>
-            <input type="text" id="filterOrgName" class="form-input" placeholder="예: 한국전력공사">
+            <div class="form-row-org">
+              <div>
+                <label class="form-label" for="filterOrgType">기관유형</label>
+                <select id="filterOrgType" class="form-select">
+                  <option value="">전체</option>
+                  <option value="공기업">공기업</option>
+                  <option value="준정부기관">준정부기관</option>
+                  <option value="기타공공기관">기타공공기관</option>
+                  <option value="지방공기업">지방공기업</option>
+                  <option value="지방공단">지방공단</option>
+                  <option value="기타">기타</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">기관명 <span class="label-opt">선택 — 여러 개 가능</span></label>
+                <div class="org-search-wrap">
+                  <input type="text" id="orgSearch" class="form-input" placeholder="기관명 검색..." autocomplete="off">
+                  <div id="orgDropdown" class="org-dropdown hidden"></div>
+                </div>
+                <div id="orgBadges" class="badge-wrap"></div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -288,7 +415,7 @@
       </form>
     </div>
 
-    <!-- Success View -->
+    <!-- 성공 화면 -->
     <div id="successView" class="success-view">
       <div class="success-icon">&#10003;</div>
       <h2>등록이 완료되었습니다!</h2>
@@ -303,7 +430,6 @@
 
   </div>
 
-  <!-- Footer -->
   <footer class="footer">
     <div class="container">
       &copy; 2026 Alio-Letter<br>
@@ -313,6 +439,179 @@
   </footer>
 
   <script>
+    // ── 기관명 목록 ─────────────────────────────────────────────────────
+    const INSTITUTIONS = [
+      // 공기업
+      '강원랜드','그랜드코리아레저','인천국제공항공사','한국공항공사',
+      '부산항만공사','인천항만공사','여수광양항만공사','울산항만공사','해양환경공단',
+      '한국가스공사','한국석유공사','한국광물자원공사','한국수력원자력','한국전력공사','한국지역난방공사',
+      '한국남동발전','한국남부발전','한국동서발전','한국서부발전','한국중부발전',
+      '한국도로공사','한국수자원공사','한국조폐공사','한국철도공사',
+      '한국토지주택공사','한국부동산원','주택도시보증공사','제주국제자유도시개발센터',
+      '한국마사회','한국방송공사','한국교육방송공사',
+      // 준정부기관
+      '건강보험심사평가원','국민건강보험공단','국민연금공단','근로복지공단',
+      '기술보증기금','신용보증기금','예금보험공사',
+      '대한무역투자진흥공사','한국관광공사','한국농수산식품유통공사',
+      '한국무역보험공사','중소벤처기업진흥공단','소상공인시장진흥공단',
+      '한국가스안전공사','한국교통안전공단','한국농어촌공사',
+      '한국산업안전보건공단','한국산업인력공단','한국승강기안전공단',
+      '한국에너지공단','한국전기안전공사','한국장학재단',
+      '한국인터넷진흥원','정보통신산업진흥원','한국콘텐츠진흥원',
+      '한국환경공단','국립공원공단','도로교통공단','한국소비자원',
+      '한국임업진흥원','한국수산자원공단','국민체육진흥공단',
+      '한국청소년활동진흥원','사회보장정보원','한국보훈복지의료공단',
+      '한국노인인력개발원','한국장애인개발원','한국사회복지협의회',
+      // 기타공공기관 및 연구기관
+      '한국개발연구원','한국보건사회연구원','한국조세재정연구원',
+      '한국과학기술연구원','한국전자통신연구원','한국항공우주연구원',
+      '한국기계연구원','한국화학연구원','한국생명공학연구원',
+      '한국원자력연구원','한국철도기술연구원','한국해양과학기술원',
+      '국토연구원','한국건설기술연구원','한국환경연구원',
+      '한국교육개발원','한국직업능력연구원','한국노동연구원',
+      '한국행정연구원','한국법제연구원','한국형사정책연구원',
+      '한국에너지기술연구원','한국식품연구원','한국한의학연구원',
+      '국립암센터','국립중앙의료원','건강보험공단일산병원',
+    ].sort();
+
+    // ── 상태 ─────────────────────────────────────────────────────────────
+    let careerFields = [];  // [{field, years}]
+    let certs = [];         // [string]
+    let langs = [];         // [{type, score}]
+    let orgNames = [];      // [string]
+
+    // ── 뱃지 렌더 헬퍼 ──────────────────────────────────────────────────
+    function renderBadges(containerId, items, labelFn, removeFn) {
+      const wrap = document.getElementById(containerId);
+      wrap.innerHTML = '';
+      items.forEach((item, i) => {
+        const b = document.createElement('span');
+        b.className = 'badge';
+        b.innerHTML = `${labelFn(item)}<button type="button" class="badge-x" aria-label="삭제">&times;</button>`;
+        b.querySelector('.badge-x').addEventListener('click', () => { removeFn(i); });
+        wrap.appendChild(b);
+      });
+    }
+
+    function renderCareer() {
+      renderBadges('careerBadges', careerFields,
+        f => `${f.field} ${f.years}년`,
+        i => { careerFields.splice(i,1); renderCareer(); });
+    }
+    function renderCerts() {
+      renderBadges('certBadges', certs,
+        c => c,
+        i => { certs.splice(i,1); renderCerts(); });
+    }
+    function renderLangs() {
+      renderBadges('langBadges', langs,
+        l => `${l.type} ${l.score}`,
+        i => { langs.splice(i,1); renderLangs(); });
+    }
+    function renderOrgs() {
+      renderBadges('orgBadges', orgNames,
+        o => o,
+        i => { orgNames.splice(i,1); renderOrgs(); });
+    }
+
+    // ── 경력 추가 ────────────────────────────────────────────────────────
+    function addCareer() {
+      const field = document.getElementById('careerField').value.trim();
+      const yrs = parseInt(document.getElementById('careerYrs').value);
+      if (!field || !yrs || yrs < 1) return;
+      careerFields.push({ field, years: yrs });
+      document.getElementById('careerField').value = '';
+      document.getElementById('careerYrs').value = '';
+      renderCareer();
+    }
+    document.getElementById('addCareer').addEventListener('click', addCareer);
+    document.getElementById('careerYrs').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addCareer(); }});
+
+    // ── 자격증 추가 ──────────────────────────────────────────────────────
+    function addCert() {
+      const val = document.getElementById('certInput').value.trim();
+      if (!val) return;
+      // 쉼표 구분 입력 지원
+      val.split(/[,，、]/).map(s => s.trim()).filter(Boolean).forEach(c => {
+        if (!certs.includes(c)) certs.push(c);
+      });
+      document.getElementById('certInput').value = '';
+      renderCerts();
+    }
+    document.getElementById('addCert').addEventListener('click', addCert);
+    document.getElementById('certInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addCert(); }});
+
+    // ── 어학 추가 ────────────────────────────────────────────────────────
+    function addLang() {
+      const type = document.getElementById('langType').value;
+      const score = document.getElementById('langScore').value.trim();
+      if (!score) return;
+      langs.push({ type, score });
+      document.getElementById('langScore').value = '';
+      renderLangs();
+    }
+    document.getElementById('addLang').addEventListener('click', addLang);
+    document.getElementById('langScore').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addLang(); }});
+
+    // ── 기관명 검색 ──────────────────────────────────────────────────────
+    const orgSearch = document.getElementById('orgSearch');
+    const orgDropdown = document.getElementById('orgDropdown');
+
+    orgSearch.addEventListener('input', () => {
+      const q = orgSearch.value.trim();
+      if (!q) { orgDropdown.classList.add('hidden'); return; }
+      const matches = INSTITUTIONS.filter(inst =>
+        inst.includes(q) && !orgNames.includes(inst)
+      );
+      if (matches.length === 0) {
+        orgDropdown.innerHTML = '<div class="org-dropdown-empty">검색 결과 없음</div>';
+      } else {
+        orgDropdown.innerHTML = matches.slice(0, 10).map(inst =>
+          `<div class="org-dropdown-item" data-name="${inst}">${inst}</div>`
+        ).join('');
+        orgDropdown.querySelectorAll('.org-dropdown-item').forEach(el => {
+          el.addEventListener('click', () => {
+            const name = el.dataset.name;
+            if (!orgNames.includes(name)) { orgNames.push(name); renderOrgs(); }
+            orgSearch.value = '';
+            orgDropdown.classList.add('hidden');
+          });
+        });
+      }
+      orgDropdown.classList.remove('hidden');
+    });
+
+    orgSearch.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { orgDropdown.classList.add('hidden'); }
+    });
+
+    document.addEventListener('click', e => {
+      if (!orgSearch.contains(e.target) && !orgDropdown.contains(e.target)) {
+        orgDropdown.classList.add('hidden');
+      }
+    });
+
+    // ── spec_text 조합 ────────────────────────────────────────────────────
+    function buildSpecText() {
+      const parts = [];
+      const edu = document.getElementById('specEdu').value;
+      const major = document.getElementById('specMajor').value.trim();
+      if (edu) parts.push(`최종학력: ${edu}${major ? ` / 전공: ${major}` : ''}`);
+      const birth = document.getElementById('specBirth').value.trim();
+      if (birth) parts.push(`출생연도: ${birth}년`);
+      const mil = document.querySelector('input[name="specMil"]:checked')?.value;
+      if (mil && mil !== '해당없음') parts.push(`병역: ${mil}`);
+      const careerYrs = document.getElementById('specCareerYears').value;
+      parts.push(`총 경력: ${careerYrs === '0' ? '신입' : careerYrs + '년'}`);
+      if (careerFields.length) parts.push(`분야별 경력: ${careerFields.map(f => `${f.field} ${f.years}년`).join(', ')}`);
+      if (certs.length) parts.push(`자격증: ${certs.join(', ')}`);
+      if (langs.length) parts.push(`어학: ${langs.map(l => `${l.type} ${l.score}`).join(', ')}`);
+      const legal = [...document.querySelectorAll('input[name="specLegal"]:checked')].map(el => el.value);
+      if (legal.length) parts.push(`법정우대: ${legal.join(', ')}`);
+      return parts.join('\n');
+    }
+
+    // ── 폼 제출 ──────────────────────────────────────────────────────────
     const form = document.getElementById('registerForm');
     const submitBtn = document.getElementById('submitBtn');
     const submitText = document.getElementById('submitText');
@@ -321,78 +620,41 @@
     const formView = document.getElementById('formView');
     const successView = document.getElementById('successView');
 
-    // Validation helpers
-    function validateEmail(email) {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    function validateEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+    function validateName(v) { return v.trim().length >= 2 && v.trim().length <= 20; }
+    function clearErrors() { document.querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error')); }
+    function showError(id, msg) {
+      const g = document.getElementById(id)?.closest('.form-group');
+      if (!g) return;
+      g.classList.add('has-error');
+      if (msg) g.querySelector('.form-error').textContent = msg;
     }
-
-    function validateName(name) {
-      const trimmed = name.trim();
-      return trimmed.length >= 2 && trimmed.length <= 20;
-    }
-
-    function clearErrors() {
-      document.querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
-    }
-
-    function showError(fieldId, message) {
-      const group = document.getElementById(fieldId).closest('.form-group');
-      group.classList.add('has-error');
-      if (message) {
-        group.querySelector('.form-error').textContent = message;
-      }
-    }
-
-    function showAlert(type, message) {
+    function showAlert(type, msg) {
       alertMsg.className = `alert alert-${type} show`;
-      alertMsg.textContent = message;
+      alertMsg.textContent = msg;
       alertMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-
-    function hideAlert() {
-      alertMsg.className = 'alert';
+    function setLoading(on) {
+      submitBtn.disabled = on;
+      submitText.classList.toggle('hidden', on);
+      submitLoading.classList.toggle('hidden', !on);
     }
 
-    function setLoading(loading) {
-      submitBtn.disabled = loading;
-      submitText.classList.toggle('hidden', loading);
-      submitLoading.classList.toggle('hidden', !loading);
-    }
-
-    // Form submission
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', async e => {
       e.preventDefault();
       clearErrors();
-      hideAlert();
+      alertMsg.className = 'alert';
 
       const name = document.getElementById('name').value;
       const email = document.getElementById('email').value;
-      const specText = document.getElementById('specText').value;
       const agree = document.getElementById('agree').checked;
 
-      // Client-side validation
       let hasError = false;
-
-      if (!validateName(name)) {
-        showError('name');
-        hasError = true;
-      }
-      if (!validateEmail(email)) {
-        showError('email');
-        hasError = true;
-      }
-      if (!specText.trim()) {
-        showError('specText');
-        hasError = true;
-      }
-      if (!agree) {
-        showError('agree');
-        hasError = true;
-      }
-
+      if (!validateName(name)) { showError('name'); hasError = true; }
+      if (!validateEmail(email)) { showError('email'); hasError = true; }
+      if (!agree) { showError('agree'); hasError = true; }
       if (hasError) {
-        const firstError = document.querySelector('.has-error');
-        if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.querySelector('.has-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
 
@@ -401,8 +663,6 @@
         return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(el => el.value);
       }
       const filterPrefs = {};
-      const ncs = document.getElementById('filterNcs').value.trim();
-      if (ncs) filterPrefs.ncs = ncs.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
       const locations = getChecked('locations');
       if (locations.length) filterPrefs.locations = locations;
       const workFields = getChecked('work_fields');
@@ -412,20 +672,16 @@
       const recruitTypes = getChecked('recruit_types');
       if (recruitTypes.length) filterPrefs.recruit_types = recruitTypes;
       const educations = getChecked('educations');
-      if (educations.length) {
-        filterPrefs.educations = educations;
-        filterPrefs.education_mode = document.querySelector('input[name="education_mode"]:checked').value;
-      }
+      if (educations.length) filterPrefs.educations = educations;
       const isSubstitute = document.querySelector('input[name="is_substitute"]:checked').value;
       if (isSubstitute !== '전체') filterPrefs.is_substitute = isSubstitute;
       const orgType = document.getElementById('filterOrgType').value;
       if (orgType) filterPrefs.org_types = [orgType];
-      const orgName = document.getElementById('filterOrgName').value.trim();
-      if (orgName) filterPrefs.org_names = orgName.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
+      if (orgNames.length) filterPrefs.org_names = orgNames;
 
-      // Submit
+      const specText = buildSpecText();
+
       setLoading(true);
-
       try {
         const res = await fetch('/api/register', {
           method: 'POST',
@@ -433,44 +689,23 @@
           body: JSON.stringify({
             name: name.trim(),
             email: email.trim().toLowerCase(),
-            spec_text: specText.trim(),
+            spec_text: specText || null,
             filter_prefs: filterPrefs
           })
         });
-
         const data = await res.json();
-
         if (data.success) {
           formView.style.display = 'none';
           successView.style.display = 'block';
           window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
-          if (data.error === 'duplicate_email') {
-            showAlert('info', '이미 등록된 이메일입니다. 정보가 업데이트되었습니다.');
-            // Still show success after UPSERT
-            setTimeout(() => {
-              formView.style.display = 'none';
-              successView.style.display = 'block';
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }, 2000);
-          } else {
-            showAlert('error', data.error || '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-          }
+          showAlert('error', data.error || '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         }
-      } catch (err) {
+      } catch {
         showAlert('error', '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
-        console.error('Registration error:', err);
       } finally {
         setLoading(false);
       }
-    });
-
-    // Auto-resize textareas
-    document.querySelectorAll('.form-textarea').forEach(textarea => {
-      textarea.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = Math.max(140, this.scrollHeight) + 'px';
-      });
     });
   </script>
 
