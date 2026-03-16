@@ -13,9 +13,9 @@ import sys
 import db
 import scraper
 import user_input
-import judge
 import daily
-from analyzer import analyze_all_postings
+
+# judge, analyzer는 google-generativeai에 의존 → 실행 시점에 lazy import
 
 MENU = """
 === alio-letter 파이프라인 ===
@@ -43,12 +43,14 @@ def run(choice: str) -> None:
         scraper.fetch_detail_postings()
 
     elif choice == "3":
+        from analyzer import analyze_all_postings
         analyze_all_postings()
 
     elif choice == "4":
         user_input.collect()
 
     elif choice == "5":
+        import judge
         profile = db.load_user_profile()
         if not profile:
             print("저장된 프로필이 없습니다. 먼저 사용자 정보를 입력하세요 (4번).")
