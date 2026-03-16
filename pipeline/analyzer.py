@@ -38,6 +38,7 @@ import json
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -82,6 +83,24 @@ PROMPT = """이 채용공고 PDF를 분석하여 아래 JSON 형식으로만 응
 - bonus_points는 공고 전체에 적용되는 가산점을 하나의 문자열로 요약
 - PDF에 명시된 내용만 기재. 추론하거나 없는 내용을 추가하지 말 것
 - JSON 외 다른 텍스트(```json 등 포함) 절대 출력 금지"""
+
+
+_RETRY_DELAYS = [1, 2, 4]  # 최대 3회 재시도, 초 단위 backoff
+
+
+def _gemini_call_with_retry(fn):
+    """Gemini API 호출을 최대 3회 재시도. 실패 시 마지막 예외를 raise."""
+    last_exc = None
+    for delay in [0] + _RETRY_DELAYS:
+        if delay:
+            print(f"  Gemini 재시도 대기 {delay}s...")
+            time.sleep(delay)
+        try:
+            return fn()
+        except Exception as e:
+            print(f"  Gemini 호출 실패: {e}")
+            last_exc = e
+    raise last_exc
 
 
 def _load_client() -> genai.Client:
@@ -152,7 +171,7 @@ def analyze_posting(posting: Posting, client: genai.Client) -> tuple[list[Postin
     with open(pdf_path, "rb") as f:
         pdf_bytes = f.read()
 
-    response = client.models.generate_content(
+    response = _gemini_call_with_retry(lambda: client.models.generate_content(
         model=MODEL_NAME,
         contents=[
             types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
@@ -166,7 +185,7 @@ def analyze_posting(posting: Posting, client: genai.Client) -> tuple[list[Postin
             thinking_config=types.ThinkingConfig(thinking_budget=0),
             temperature=0.0,  # 응답 일관성 확보 — 같은 PDF에서 매번 동일한 결과 보장
         ),
-    )
+    ))
     return _parse_response(posting["idx"], response.text)
 
 
@@ -209,6 +228,7 @@ def analyze_all_postings() -> None:
 
             print(f"[{idx}] 저장 완료: 트랙 {len(tracks)}개")
             analyzed += 1
+            time.sleep(0.5)  # rate limit 예방
         except Exception as e:
             print(f"[{idx}] 분석 실패: {e}")
             failed += 1
