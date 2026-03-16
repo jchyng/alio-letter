@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS user_judgments (
     bonus_summary    TEXT,
     bonus_reasons    TEXT,              -- JSON list
     judged_at        TEXT DEFAULT (datetime('now')),
+    sent_at          TEXT,              -- 이메일 발송 시각 (NULL = 미발송)
     UNIQUE(user_id, posting_track_id)
 );
 """
@@ -79,6 +80,12 @@ def init_db() -> None:
     """테이블이 없으면 생성. 시작 시 항상 안전하게 호출 가능."""
     with _connect() as conn:
         conn.executescript(SCHEMA_SQL)
+        # 기존 DB sent_at 컬럼 마이그레이션 (이미 있으면 무시)
+        try:
+            conn.execute("ALTER TABLE user_judgments ADD COLUMN sent_at TEXT")
+            conn.commit()
+        except Exception:
+            pass
 
 
 def reset_db() -> None:
@@ -288,6 +295,88 @@ def save_user(email: str, name: str, raw_spec_text: str,
     )
     rows = fetchall("SELECT id FROM users WHERE email = ?", (email,))
     return rows[0]["id"]
+
+
+def load_all_users() -> list[dict]:
+    """users 테이블 전체 로드. daily.py에서 활성 사용자 순회에 사용."""
+    rows = fetchall("SELECT * FROM users")
+    result = []
+    for row in rows:
+        d = dict(row)
+        for field in ("parsed_spec", "filter_prefs"):
+            if isinstance(d.get(field), str):
+                try:
+                    d[field] = json.loads(d[field])
+                except (json.JSONDecodeError, TypeError):
+                    pass
+        result.append(d)
+    return result
+
+
+def load_tracks_by_posting(posting_id: int) -> list[dict]:
+    """특정 공고의 트랙만 로드. daily.py 매칭 후 트랙 조회 최적화용."""
+    rows = fetchall(
+        "SELECT pt.*, p.alio_id FROM posting_tracks pt "
+        "JOIN postings p ON pt.posting_id = p.posting_id "
+        "WHERE pt.posting_id = ?",
+        (posting_id,),
+    )
+    result = []
+    for row in rows:
+        d = dict(row)
+        try:
+            d["idx"] = int(d.pop("alio_id", 0))
+        except (ValueError, TypeError):
+            d["idx"] = d.pop("alio_id", 0)
+        d.pop("posting_id", None)
+        if isinstance(d.get("eligibility"), str):
+            try:
+                d["eligibility"] = json.loads(d["eligibility"])
+            except (json.JSONDecodeError, TypeError):
+                pass
+        result.append(d)
+    return result
+
+
+def mark_sent(user_id: int, posting_track_id: int) -> None:
+    """user_judgments.sent_at에 현재 시각 기록."""
+    execute(
+        "UPDATE user_judgments SET sent_at = datetime('now') "
+        "WHERE user_id = ? AND posting_track_id = ?",
+        (user_id, posting_track_id),
+    )
+
+
+def load_unsent_judgments(user_id: int) -> list[dict]:
+    """sent_at IS NULL인 판정 결과 조회. 이메일 발송 대상 추출용."""
+    rows = fetchall(
+        """
+        SELECT uj.*, pt.track_name, pt.positions, pt.total_positions,
+               pt.eligibility, pt.posting_id,
+               p.alio_id, p.title, p.org_name, p.posting_url,
+               p.deadline, p.salary_url, p.bonus_points
+        FROM user_judgments uj
+        JOIN posting_tracks pt ON uj.posting_track_id = pt.id
+        JOIN postings p ON pt.posting_id = p.posting_id
+        WHERE uj.user_id = ? AND uj.sent_at IS NULL
+        """,
+        (user_id,),
+    )
+    result = []
+    for row in rows:
+        d = dict(row)
+        for field in ("unmet", "bonus_reasons", "eligibility"):
+            if isinstance(d.get(field), str):
+                try:
+                    d[field] = json.loads(d[field])
+                except (json.JSONDecodeError, TypeError):
+                    pass
+        try:
+            d["idx"] = int(d.pop("alio_id", 0))
+        except (ValueError, TypeError):
+            d["idx"] = d.pop("alio_id", 0)
+        result.append(d)
+    return result
 
 
 # ── 판정 결과 (웹 사용자) ──────────────────────────────────────────────────────
