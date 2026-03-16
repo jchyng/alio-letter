@@ -2,9 +2,8 @@ name = "alio-letter"
 compatibility_date = "2024-09-23"
 pages_build_output_dir = "./src"
 
-[vars]
-GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
-# DB_HOST/DB_USER/DB_NAME 제거 — D1 바인딩으로 대체
+# 환경변수(GEMINI_API_KEY, RESEND_API_KEY, RESEND_FROM)는 wrangler pages secret으로 등록
+# npx wrangler pages secret put GEMINI_API_KEY
 
 [[d1_databases]]
 binding = "DB"
