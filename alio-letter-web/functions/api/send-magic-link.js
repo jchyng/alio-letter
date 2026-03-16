@@ -31,9 +31,7 @@ export async function onRequestPost(context) {
     // 보안: 가입 여부와 무관하게 동일 응답 (계정 존재 여부 유추 방지)
     if (user) {
       const profileUrl = `https://alio-letter.pages.dev/profile/${user.edit_token}`;
-      // TODO: Resend API로 매직링크 이메일 발송
-      // await sendMagicLinkEmail(email, profileUrl);
-      console.log(`Magic link for ${email}: ${profileUrl}`);
+      await sendMagicLinkEmail(context.env, email, profileUrl);
     }
 
     // 보안상 이메일이 실제 가입되었는지 여부와 상관없이 항상 성공 응답을 보냅니다.
@@ -44,6 +42,24 @@ export async function onRequestPost(context) {
     console.error('Magic link send error:', err);
     return jsonResponse({ success: false, error: '처리 중 오류가 발생했습니다.' }, 500);
   }
+}
+
+async function sendMagicLinkEmail(env, to, profileUrl) {
+  const from = env.RESEND_FROM || 'onboarding@resend.dev';
+  const html = `
+    <p>안녕하세요!</p>
+    <p>아래 링크를 클릭하면 내 정보 관리 페이지로 이동합니다.</p>
+    <p><a href="${profileUrl}">내 정보 관리 바로가기</a></p>
+    <p style="color:#aaa;font-size:12px">이 링크를 요청하지 않으셨다면 무시하셔도 됩니다.</p>
+  `;
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ from, to: [to], subject: '[alio-letter] 내 정보 관리 링크', html }),
+  });
 }
 
 function jsonResponse(data, status = 200) {

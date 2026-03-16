@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS users (
     parsed_spec   TEXT,            -- JSON (UserProfile)
     filter_prefs  TEXT,            -- JSON (PostingFilter)
     edit_token    TEXT UNIQUE,
+    is_active     INTEGER NOT NULL DEFAULT 1,  -- 1=구독중, 0=구독중단
     created_at    TEXT DEFAULT (datetime('now'))
 );
 
@@ -54,5 +55,6 @@ CREATE TABLE IF NOT EXISTS user_judgments (
     bonus_summary    TEXT,
     bonus_reasons    TEXT,              -- JSON list
     judged_at        TEXT DEFAULT (datetime('now')),
+    sent_at          TEXT,              -- 이메일 발송 시각 (NULL = 미발송)
     UNIQUE(user_id, posting_track_id)
 );

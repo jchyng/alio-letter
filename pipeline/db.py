@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS users (
     parsed_spec   TEXT,            -- JSON (UserProfile)
     filter_prefs  TEXT,            -- JSON (PostingFilter)
     edit_token    TEXT UNIQUE,
+    is_active     INTEGER NOT NULL DEFAULT 1,  -- 1=구독중, 0=구독중단
     created_at    TEXT DEFAULT (datetime('now'))
 );
 
@@ -80,12 +81,16 @@ def init_db() -> None:
     """테이블이 없으면 생성. 시작 시 항상 안전하게 호출 가능."""
     with _connect() as conn:
         conn.executescript(SCHEMA_SQL)
-        # 기존 DB sent_at 컬럼 마이그레이션 (이미 있으면 무시)
-        try:
-            conn.execute("ALTER TABLE user_judgments ADD COLUMN sent_at TEXT")
-            conn.commit()
-        except Exception:
-            pass
+        # 기존 DB 컬럼 마이그레이션 (이미 있으면 무시)
+        for sql in [
+            "ALTER TABLE user_judgments ADD COLUMN sent_at TEXT",
+            "ALTER TABLE users ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1",
+        ]:
+            try:
+                conn.execute(sql)
+                conn.commit()
+            except Exception:
+                pass
 
 
 def reset_db() -> None:
@@ -298,8 +303,8 @@ def save_user(email: str, name: str, raw_spec_text: str,
 
 
 def load_all_users() -> list[dict]:
-    """users 테이블 전체 로드. daily.py에서 활성 사용자 순회에 사용."""
-    rows = fetchall("SELECT * FROM users")
+    """구독 중인(is_active=1) 사용자 전체 로드. daily.py에서 순회에 사용."""
+    rows = fetchall("SELECT * FROM users WHERE is_active = 1")
     result = []
     for row in rows:
         d = dict(row)
