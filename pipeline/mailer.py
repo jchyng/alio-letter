@@ -20,11 +20,15 @@ load_dotenv(Path(__file__).parent / ".env")
 _DEFAULT_FROM = "onboarding@resend.dev"
 
 
-def build_email_html(user_name: str, items: list[dict]) -> str:
+_SITE_BASE = "https://alio-letter.pages.dev"
+
+
+def build_email_html(user_name: str, items: list[dict], edit_token: str = "") -> str:
     """이메일 본문 HTML 생성.
 
     items 구조:
         [{"posting": Posting dict, "tracks": [{"track": PostingTrack, "judgment": TrackJudgment}]}]
+    edit_token: 사용자 프로필 페이지 링크 생성용 (없으면 링크 미포함)
     """
     sections = []
     for item in items:
@@ -65,6 +69,17 @@ def build_email_html(user_name: str, items: list[dict]) -> str:
 </div>""")
 
     body = "\n".join(sections)
+
+    if edit_token:
+        profile_url = f"{_SITE_BASE}/profile/{edit_token}"
+        footer_links = (
+            f'<a href="{profile_url}" style="color:#888">내 정보 수정</a>'
+            f' &nbsp;·&nbsp; '
+            f'<a href="{profile_url}" style="color:#888">알림 해지</a>'
+        )
+    else:
+        footer_links = "내 정보 수정은 alio-letter 사이트에서"
+
     return f"""<!DOCTYPE html>
 <html lang="ko">
 <head><meta charset="utf-8"><title>alio-letter</title></head>
@@ -73,7 +88,7 @@ def build_email_html(user_name: str, items: list[dict]) -> str:
   <p>오늘 새로 매칭된 공고입니다.</p>
   {body}
   <hr>
-  <p style="font-size:12px;color:#aaa">alio-letter · 수신거부는 회원 페이지에서</p>
+  <p style="font-size:12px;color:#aaa">alio-letter &nbsp;·&nbsp; {footer_links}</p>
 </body>
 </html>"""
 

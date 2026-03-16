@@ -166,7 +166,8 @@ def run(skip_scrape: bool = False) -> None:
             posting_map[idx]["track_ids"].append(row.get("posting_track_id"))
 
         items = [{"posting": v["posting"], "tracks": v["tracks"]} for v in posting_map.values()]
-        html = mailer.build_email_html(name, items)
+        edit_token = user.get("edit_token", "")
+        html = mailer.build_email_html(name, items, edit_token=edit_token)
         subject = f"[alio-letter] 오늘의 공고 {len(posting_map)}건"
 
         ok = mailer.send_email(email, name, subject, html)
