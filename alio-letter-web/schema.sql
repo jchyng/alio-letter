@@ -59,3 +59,9 @@ CREATE TABLE IF NOT EXISTS user_judgments (
     sent_at          TEXT,              -- 이메일 발송 시각 (NULL = 미발송)
     UNIQUE(user_id, posting_track_id)
 );
+
+-- 인덱스
+-- posting_tracks.posting_id: 트랙 조회 시 FK join 최적화 (UNIQUE(posting_id, track_name)의 좌측 prefix이나 명시적으로 추가)
+CREATE INDEX IF NOT EXISTS idx_posting_tracks_posting_id ON posting_tracks(posting_id);
+-- user_judgments(user_id, sent_at): load_unsent_judgments — "WHERE user_id = ? AND sent_at IS NULL" 복합 조건 최적화
+CREATE INDEX IF NOT EXISTS idx_user_judgments_unsent ON user_judgments(user_id, sent_at);
