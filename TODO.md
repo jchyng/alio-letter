@@ -21,7 +21,7 @@ sudo apt install fonts-nanum fonts-nanum-extra fonts-unfonts-core fonts-baekmuk
 fc-cache -fv
 ```
 
-- [ ] 전제조건 확인 완료
+- [x] 전제조건 확인 완료
 
 ---
 
@@ -110,20 +110,44 @@ python -c "import db; db.init_db(); print('DB OK')"
 
 ## 3. Cloudflare 설정
 
-### 3-1. wrangler 설치 & 로그인
+> ⚠️ 라즈베리파이 CLI 환경 주의: `wrangler login`은 브라우저 OAuth 콜백이 필요해 동작 안 함.
+> API 토큰 방식으로 대체한다. 터미널 세션마다 아래 환경변수를 먼저 설정해야 함.
+
+### 3-0. 사전 준비 (PC 브라우저에서)
+
+**API 토큰 생성**
+
+1. https://dash.cloudflare.com/profile/api-tokens → **Create Token**
+2. **Custom token** 선택 후 권한 추가:
+   - `Account > D1 > Edit`
+   - `Account > Cloudflare Pages > Edit`
+3. Account Resources: 본인 계정 선택 → **Create Token** → 토큰 값 복사
+
+**Account ID 확인**
+
+- https://dash.cloudflare.com 접속 → 우측 사이드바 → **Account ID** 복사
+
+### 3-1. wrangler 설치 & 인증 설정
 
 ```bash
 cd /home/pi/workspace/alio-letter/alio-letter-web
 npm install
-npx wrangler login
-# 브라우저가 열리면 Cloudflare 계정으로 승인
+
+# 터미널 세션마다 실행 (재부팅·터미널 재시작 시 다시 입력 필요)
+export CLOUDFLARE_API_TOKEN=여기에_API_토큰
+export CLOUDFLARE_ACCOUNT_ID=여기에_ACCOUNT_ID
+
+# 인증 확인
+npx wrangler whoami
+# "You are logged in with an User API Token" 메시지 확인
 ```
 
-- [ ] wrangler 로그인 완료
+- [ ] wrangler 인증 완료
 
 ### 3-2. D1 데이터베이스 생성
 
 ```bash
+# 환경변수가 설정된 상태에서 실행
 npx wrangler d1 create alio-letter
 ```
 
@@ -141,7 +165,7 @@ database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
 - [ ] D1 생성 완료
 
-### 3-3. wrangler.toml에 database_id 입력
+### 3-3. wrangler.toml 및 .env에 ID 입력
 
 파일: `alio-letter-web/wrangler.toml`
 
@@ -152,26 +176,37 @@ database_name = "alio-letter"
 database_id = "여기에_위에서_복사한_ID_입력"
 ```
 
+파일: `pipeline/.env` (파이프라인이 D1에 직접 접근하는 데 사용)
+
+```
+CF_ACCOUNT_ID=위에서_확인한_ACCOUNT_ID
+CF_D1_DATABASE_ID=위에서_복사한_database_id
+CF_API_TOKEN=위에서_생성한_API_토큰
+```
+
 - [ ] wrangler.toml 수정 완료
+- [ ] pipeline/.env CF 항목 입력 완료
 
 ### 3-4. D1에 테이블 초기화
 
 ```bash
 cd /home/pi/workspace/alio-letter/alio-letter-web
-npx wrangler d1 execute alio-letter --file=schema.sql
+npx wrangler d1 execute alio-letter --file=schema.sql --remote
 ```
 
 확인:
 ```bash
-npx wrangler d1 execute alio-letter --command="SELECT name FROM sqlite_master WHERE type='table'"
+npx wrangler d1 execute alio-letter --command="SELECT name FROM sqlite_master WHERE type='table'" --remote
 # postings, posting_tracks, users, user_judgments 4개 나와야 함
 ```
 
 - [ ] 테이블 초기화 확인
 
-### 3-5. Cloudflare 환경변수(Secret) 등록
+### 3-5. Cloudflare Pages Secret 등록
 
-> CF Functions에서 사용하는 키. 대시보드 대신 wrangler CLI로 등록.
+> CF Functions(register.js 등)에서 사용하는 API 키.
+> Pages 프로젝트가 먼저 존재해야 하므로 4번(배포) 이후에 진행 가능.
+> 배포 전 선등록하려면 대시보드에서 직접 추가.
 
 ```bash
 cd /home/pi/workspace/alio-letter/alio-letter-web
@@ -182,10 +217,10 @@ npx wrangler pages secret put RESEND_API_KEY
 # 프롬프트에 키 값 입력
 
 npx wrangler pages secret put RESEND_FROM
-# 프롬프트에 발신 주소 입력 (예: noreply@alio-letter.com)
+# 프롬프트에 발신 주소 입력 (도메인 전: onboarding@resend.dev)
 ```
 
-또는 대시보드에서: Cloudflare 대시보드 → Workers & Pages → `alio-letter` → Settings → Environment variables → Add variable
+또는 대시보드: Workers & Pages → `alio-letter` → Settings → Environment variables
 
 - [ ] 환경변수 등록 완료
 
