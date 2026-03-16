@@ -393,7 +393,10 @@ def load_unsent_judgments(user_id: int) -> list[dict]:
 # ── 판정 결과 (웹 사용자) ──────────────────────────────────────────────────────
 
 def save_judgments(user_id: int, judgments: list[dict]) -> None:
-    """판정 결과 INSERT OR REPLACE. posting_track_id는 (alio_id, track_name)으로 조회."""
+    """판정 결과 INSERT OR IGNORE. posting_track_id는 (alio_id, track_name)으로 조회.
+    이미 존재하는 (user_id, posting_track_id) 쌍은 건너뜀 (sent_at 보호).
+    INSERT OR REPLACE를 쓰면 sent_at이 NULL로 초기화되어 이메일 중복 발송됨.
+    """
     for j in judgments:
         rows = fetchall(
             """
@@ -409,7 +412,7 @@ def save_judgments(user_id: int, judgments: list[dict]) -> None:
         posting_track_id = rows[0]["id"]
         execute(
             """
-            INSERT OR REPLACE INTO user_judgments
+            INSERT OR IGNORE INTO user_judgments
                 (user_id, posting_track_id, eligible, unmet, bonus_summary, bonus_reasons)
             VALUES (?,?,?,?,?,?)
             """,
@@ -422,6 +425,15 @@ def save_judgments(user_id: int, judgments: list[dict]) -> None:
                 json.dumps(j.get("bonus_reasons", []), ensure_ascii=False),
             ),
         )
+
+
+def load_judged_track_ids(user_id: int) -> set[int]:
+    """이미 판정된 posting_track_id 집합 반환. daily.py에서 중복 Gemini 호출 방지용."""
+    rows = fetchall(
+        "SELECT posting_track_id FROM user_judgments WHERE user_id = ?",
+        (user_id,),
+    )
+    return {r["posting_track_id"] for r in rows}
 
 
 # ── 로컬 개발 전용 (pipeline/raw/ — gitignore 적용) ──────────────────────────

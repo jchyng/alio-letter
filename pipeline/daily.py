@@ -101,8 +101,9 @@ def run(skip_scrape: bool = False) -> None:
 
         print(f"[daily] {name}({email}): {len(matched)}건 매칭")
 
-        # 4b-c. 트랙 로드 + 판정
+        # 4b-c. 트랙 로드 + 판정 (이미 판정된 트랙은 건너뜀 — 중복 Gemini 호출 방지)
         if gemini_model and profile:
+            already_judged = db.load_judged_track_ids(user_id)
             for posting in matched:
                 # posting_id 조회 (DB 내부 ID)
                 rows = db.fetchall(
@@ -116,9 +117,14 @@ def run(skip_scrape: bool = False) -> None:
                 if not tracks:
                     continue
 
+                # 미판정 트랙만 추려서 Gemini 호출
+                new_tracks = [t for t in tracks if t.get("id") not in already_judged]
+                if not new_tracks:
+                    continue
+
                 bonus_points = posting.get("bonus_points", "")
                 judgments = []
-                for track in tracks:
+                for track in new_tracks:
                     try:
                         j = _judge_track(profile, track, bonus_points, gemini_model)
                         j["idx"] = posting.get("idx")
