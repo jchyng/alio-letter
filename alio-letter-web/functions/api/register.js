@@ -54,15 +54,18 @@ export async function onRequestPost(context) {
     }
 
     // 4. D1 UPSERT — 기존 사용자면 UPDATE, 신규면 INSERT (edit_token 보존)
+    // spec_text가 있을 때만 parsed_spec 갱신 (없으면 기존 값 유지)
     if (existing) {
+      const specProvided = spec_text && spec_text.trim();
       await env.DB.prepare(
-        `UPDATE users SET name=?, raw_spec_text=?, parsed_spec=?, filter_prefs=? WHERE email=?`
+        specProvided
+          ? `UPDATE users SET name=?, raw_spec_text=?, parsed_spec=?, filter_prefs=? WHERE email=?`
+          : `UPDATE users SET name=?, filter_prefs=? WHERE email=?`
       ).bind(
-        name.trim(),
-        spec_text ? spec_text.trim() : null,
-        parsedSpec ? JSON.stringify(parsedSpec) : null,
-        filter_prefs ? JSON.stringify(filter_prefs) : null,
-        normalizedEmail
+        ...(specProvided
+          ? [name.trim(), spec_text.trim(), parsedSpec ? JSON.stringify(parsedSpec) : null,
+             filter_prefs ? JSON.stringify(filter_prefs) : null, normalizedEmail]
+          : [name.trim(), filter_prefs ? JSON.stringify(filter_prefs) : null, normalizedEmail])
       ).run();
     } else {
       await env.DB.prepare(

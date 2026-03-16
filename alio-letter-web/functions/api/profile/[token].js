@@ -24,7 +24,7 @@ export async function onRequestGet(context) {
 
   try {
     const user = await env.DB.prepare(
-      'SELECT email, name, raw_spec_text, filter_prefs FROM users WHERE edit_token = ?'
+      'SELECT email, name, raw_spec_text, filter_prefs, is_active FROM users WHERE edit_token = ?'
     ).bind(token).first();
 
     if (!user) return jsonResponse({ error: 'not_found' }, 404);
@@ -34,6 +34,7 @@ export async function onRequestGet(context) {
       email: user.email,
       raw_spec_text: user.raw_spec_text,
       filter_prefs: user.filter_prefs ? JSON.parse(user.filter_prefs) : {},
+      is_active: user.is_active === 1,
     });
 
   } catch (err) {

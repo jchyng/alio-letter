@@ -189,6 +189,12 @@ def load_all() -> list[dict]:
     return [_row_to_posting(r) for r in fetchall("SELECT * FROM postings")]
 
 
+def load_fetched() -> list[dict]:
+    """상세 크롤링 완료된 공고만 반환 (employment_type NOT NULL). 필터링·판정 대상."""
+    return [_row_to_posting(r)
+            for r in fetchall("SELECT * FROM postings WHERE employment_type IS NOT NULL")]
+
+
 def load_unfetched() -> list[dict]:
     """상세 크롤링 미완료 공고만 반환 (employment_type NULL)."""
     return [_row_to_posting(r)

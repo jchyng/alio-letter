@@ -78,7 +78,8 @@ def run(skip_scrape: bool = False) -> None:
         return
 
     print(f"[daily] 사용자 {len(users)}명 처리 시작")
-    all_postings = db.load_all()
+    # 상세 크롤링 완료된 공고만 필터링·판정 대상 (employment_type NULL인 것 제외)
+    all_postings = db.load_fetched()
 
     gemini_model = _load_gemini()
 
