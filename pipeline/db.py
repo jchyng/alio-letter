@@ -468,7 +468,11 @@ def save_judgments_local(judgments: list[dict]) -> None:
 
 
 def clear() -> None:
-    """postings 전체 삭제 (테스트 초기화용). 연관 tracks도 CASCADE 삭제."""
+    """postings 전체 삭제 (테스트 초기화용). 연관 user_judgments → tracks → postings 순으로 삭제."""
+    execute(
+        "DELETE FROM user_judgments WHERE posting_track_id IN "
+        "(SELECT id FROM posting_tracks WHERE posting_id IN (SELECT posting_id FROM postings))"
+    )
     execute("DELETE FROM posting_tracks WHERE posting_id IN (SELECT posting_id FROM postings)")
     execute("DELETE FROM postings")
 
