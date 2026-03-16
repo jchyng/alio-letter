@@ -28,21 +28,19 @@ import mailer
 
 # judge/genai는 실행 시점에 lazy import (google-generativeai 선택적 의존성)
 _judge = None
-_JUDGE_MODEL_NAME = "gemini-2.5-flash"
 
 
 def _load_gemini():
-    """Gemini 모델 로드. google-generativeai 미설치 또는 API 키 없으면 None 반환."""
+    """Gemini 클라이언트 로드. google-genai 미설치 또는 API 키 없으면 None 반환."""
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         print("[daily] GEMINI_API_KEY 없음 — 판정 단계 skip")
         return None
     try:
-        import google.generativeai as genai
-        genai.configure(api_key=api_key)
-        return genai.GenerativeModel(_JUDGE_MODEL_NAME)
+        from google import genai
+        return genai.Client(api_key=api_key)
     except ImportError:
-        print("[daily] google-generativeai 미설치 — 판정 단계 skip")
+        print("[daily] google-genai 미설치 — 판정 단계 skip")
         return None
 
 
@@ -83,7 +81,7 @@ def run(skip_scrape: bool = False) -> None:
     # idx → posting_id 매핑 (사용자 루프 밖에서 1회 조회 — N×M 쿼리 방지)
     idx_to_posting_id = db.load_posting_id_map()
 
-    gemini_model = _load_gemini()
+    gemini_client = _load_gemini()
 
     sent_total = 0
     judged_total = 0
@@ -104,7 +102,7 @@ def run(skip_scrape: bool = False) -> None:
         print(f"[daily] {name}({email}): {len(matched)}건 매칭")
 
         # 4b-c. 트랙 로드 + 판정 (이미 판정된 트랙은 건너뜀 — 중복 Gemini 호출 방지)
-        if gemini_model and profile:
+        if gemini_client and profile:
             already_judged = db.load_judged_track_ids(user_id)
             for posting in matched:
                 posting_id = idx_to_posting_id.get(posting.get("idx"))
@@ -123,7 +121,7 @@ def run(skip_scrape: bool = False) -> None:
                 judgments = []
                 for track in new_tracks:
                     try:
-                        j = _judge_track(profile, track, bonus_points, gemini_model)
+                        j = _judge_track(profile, track, bonus_points, gemini_client)
                         j["idx"] = posting.get("idx")
                         judgments.append(j)
                     except Exception as e:

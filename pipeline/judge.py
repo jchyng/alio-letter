@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
 
 import db
 from models import PostingTrack, TrackJudgment, UserProfile
@@ -129,7 +129,7 @@ def judge_track(
     profile: UserProfile,
     track: PostingTrack,
     bonus_points: str,
-    model: genai.GenerativeModel,
+    client: genai.Client,
 ) -> TrackJudgment:
     """트랙 1개의 자격요건·가산점을 Gemini로 판정한다."""
     prompt = PROMPT_TEMPLATE.format(
@@ -137,11 +137,11 @@ def judge_track(
         eligibility_text=_eligibility_text(track),
         bonus_points=bonus_points or "해당 없음",
     )
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(model=MODEL_NAME, contents=[prompt])
     return _parse_judgment(track["idx"], track.get("track_name", ""), response.text)
 
 
-def judge_all_tracks(profile: UserProfile, model: genai.GenerativeModel) -> list[TrackJudgment]:
+def judge_all_tracks(profile: UserProfile, client: genai.Client) -> list[TrackJudgment]:
     """저장된 모든 트랙을 판정하고 결과를 반환한다."""
     tracks = db.load_all_tracks()
     if not tracks:
@@ -161,7 +161,7 @@ def judge_all_tracks(profile: UserProfile, model: genai.GenerativeModel) -> list
 
         print(f"[{i}/{total}] idx={idx} '{track_name}' 판정 중...")
         try:
-            judgment = judge_track(profile, track, bonus_points, model)
+            judgment = judge_track(profile, track, bonus_points, client)
             judgments.append(judgment)
             status = "충족" if judgment["eligible"] else "미충족"
             print(f"  → {status}, 가산점 {judgment['bonus_summary']}")
@@ -173,13 +173,12 @@ def judge_all_tracks(profile: UserProfile, model: genai.GenerativeModel) -> list
     return judgments
 
 
-def _load_client() -> genai.GenerativeModel:
+def _load_client() -> genai.Client:
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         print("GEMINI_API_KEY가 .env에 없습니다.")
         sys.exit(1)
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel(MODEL_NAME)
+    return genai.Client(api_key=api_key)
 
 
 if __name__ == "__main__":
@@ -187,5 +186,5 @@ if __name__ == "__main__":
     if not profile:
         print("저장된 프로필이 없습니다. 먼저 사용자 정보를 입력하세요 (메뉴 4번).")
         sys.exit(1)
-    model = _load_client()
-    judge_all_tracks(profile, model)
+    client = _load_client()
+    judge_all_tracks(profile, client)
