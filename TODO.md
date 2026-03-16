@@ -82,11 +82,17 @@ cat > /home/pi/workspace/alio-letter/pipeline/.env << 'EOF'
 GEMINI_API_KEY=여기에_Gemini_API_키_입력
 RESEND_API_KEY=여기에_Resend_API_키_입력
 RESEND_FROM=noreply@YOUR_DOMAIN
+CF_ACCOUNT_ID=여기에_Cloudflare_계정_ID_입력
+CF_D1_DATABASE_ID=여기에_D1_데이터베이스_ID_입력
+CF_API_TOKEN=여기에_D1_edit_권한_API_토큰_입력
 EOF
 ```
 
 > `RESEND_FROM`: 도메인 인증 완료 전이면 `onboarding@resend.dev` 로 테스트 가능.
 > Gemini API 키: https://aistudio.google.com/app/apikey
+> `CF_ACCOUNT_ID`: Cloudflare 대시보드 우측 사이드바 → 계정 ID
+> `CF_D1_DATABASE_ID`: 3-2번 단계에서 D1 생성 후 출력되는 database_id
+> `CF_API_TOKEN`: Cloudflare 대시보드 → My Profile → API Tokens → Create Token → D1 Edit 권한 포함
 
 - [ ] .env 작성 완료
 

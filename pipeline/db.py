@@ -1,23 +1,28 @@
 # 파이프라인 단일 저장소.
 #
-# 로컬: SQLite (local.db) — main.py 시작 시 init_db() 한 번 호출.
-# D1 전환 시: _connect() 제거, execute/fetchall을 D1 REST API 호출로 교체.
+# Cloudflare D1 REST API 사용.
 #   POST https://api.cloudflare.com/client/v4/accounts/{ID}/d1/database/{DB_ID}/query
 #   Body: {"sql": "...", "params": [...]}
+#
+# 필요 환경변수 (pipeline/.env):
+#   CF_ACCOUNT_ID       — Cloudflare 계정 ID
+#   CF_D1_DATABASE_ID   — D1 데이터베이스 ID
+#   CF_API_TOKEN        — D1 edit 권한을 가진 API 토큰
 #
 # 로컬 전용 파일 (gitignore: pipeline/raw/):
 #   raw/user_profile.json  — CLI 사용자 프로필
 #   raw/judgments.jsonl    — 로컬 판정 결과 검토용
 
 import json
-import sqlite3
+import os
+import requests
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "local.db"
 RAW_DIR = Path(__file__).parent / "raw"
 
-SCHEMA_SQL = """
-CREATE TABLE IF NOT EXISTS postings (
+# CREATE TABLE 구문을 개별 실행해야 하므로 리스트로 분리
+_SCHEMA_STMTS = [
+    """CREATE TABLE IF NOT EXISTS postings (
     posting_id          INTEGER PRIMARY KEY,
     alio_id             TEXT NOT NULL UNIQUE,
     title               TEXT NOT NULL,
@@ -39,88 +44,112 @@ CREATE TABLE IF NOT EXISTS postings (
     attachment_converted TEXT,
     bonus_points        TEXT,
     notes               TEXT
-);
-
-CREATE TABLE IF NOT EXISTS posting_tracks (
+)""",
+    """CREATE TABLE IF NOT EXISTS posting_tracks (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     posting_id      INTEGER NOT NULL REFERENCES postings(posting_id),
     track_name      TEXT NOT NULL,
     positions       TEXT,
     total_positions INTEGER,
-    eligibility     TEXT,  -- JSON {"education":...,"career":...,...}
+    eligibility     TEXT,
     UNIQUE(posting_id, track_name)
-);
-
-CREATE TABLE IF NOT EXISTS users (
+)""",
+    """CREATE TABLE IF NOT EXISTS users (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     email         TEXT NOT NULL UNIQUE,
     name          TEXT NOT NULL,
     raw_spec_text TEXT,
-    parsed_spec   TEXT,            -- JSON (UserProfile)
-    filter_prefs  TEXT,            -- JSON (PostingFilter)
+    parsed_spec   TEXT,
+    filter_prefs  TEXT,
     edit_token    TEXT UNIQUE,
-    is_active     INTEGER NOT NULL DEFAULT 1,  -- 1=구독중, 0=구독중단
+    is_active     INTEGER NOT NULL DEFAULT 1,
     created_at    TEXT DEFAULT (datetime('now'))
-);
-
-CREATE TABLE IF NOT EXISTS user_judgments (
+)""",
+    """CREATE TABLE IF NOT EXISTS user_judgments (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id          INTEGER NOT NULL REFERENCES users(id),
     posting_track_id INTEGER NOT NULL REFERENCES posting_tracks(id),
-    eligible         INTEGER NOT NULL,  -- 0/1
-    unmet            TEXT,              -- JSON list
+    eligible         INTEGER NOT NULL,
+    unmet            TEXT,
     bonus_summary    TEXT,
-    bonus_reasons    TEXT,              -- JSON list
+    bonus_reasons    TEXT,
     judged_at        TEXT DEFAULT (datetime('now')),
-    sent_at          TEXT,              -- 이메일 발송 시각 (NULL = 미발송)
+    sent_at          TEXT,
     UNIQUE(user_id, posting_track_id)
-);
-"""
+)""",
+]
 
+# 기존 DB 마이그레이션용 (이미 컬럼·인덱스가 있으면 실패해도 무시)
+_MIGRATION_STMTS = [
+    "ALTER TABLE user_judgments ADD COLUMN sent_at TEXT",
+    "ALTER TABLE users ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1",
+    "CREATE UNIQUE INDEX IF NOT EXISTS uq_posting_track ON posting_tracks(posting_id, track_name)",
+]
+
+
+def _d1_url() -> str:
+    account_id = os.environ.get("CF_ACCOUNT_ID", "")
+    db_id = os.environ.get("CF_D1_DATABASE_ID", "")
+    return (f"https://api.cloudflare.com/client/v4/accounts/{account_id}"
+            f"/d1/database/{db_id}/query")
+
+
+def _d1_headers() -> dict:
+    return {
+        "Authorization": f"Bearer {os.environ.get('CF_API_TOKEN', '')}",
+        "Content-Type": "application/json",
+    }
+
+
+def execute(sql: str, params: tuple = ()) -> int:
+    """D1에 쓰기 쿼리 실행. last_row_id 반환."""
+    res = requests.post(
+        _d1_url(),
+        headers=_d1_headers(),
+        json={"sql": sql, "params": list(params)},
+        timeout=30,
+    )
+    res.raise_for_status()
+    data = res.json()
+    if not data.get("success"):
+        raise RuntimeError(f"D1 오류: {data.get('errors')}")
+    return data["result"][0]["meta"].get("last_row_id", 0)
+
+
+def fetchall(sql: str, params: tuple = ()) -> list[dict]:
+    """D1에 읽기 쿼리 실행 → dict 리스트 반환."""
+    res = requests.post(
+        _d1_url(),
+        headers=_d1_headers(),
+        json={"sql": sql, "params": list(params)},
+        timeout=30,
+    )
+    res.raise_for_status()
+    data = res.json()
+    if not data.get("success"):
+        raise RuntimeError(f"D1 오류: {data.get('errors')}")
+    return data["result"][0].get("results", [])
+
+
+# ── 초기화 ────────────────────────────────────────────────────────────────────
 
 def init_db() -> None:
     """테이블이 없으면 생성. 시작 시 항상 안전하게 호출 가능."""
-    with _connect() as conn:
-        conn.executescript(SCHEMA_SQL)
-        # 기존 DB 컬럼·인덱스 마이그레이션 (이미 있으면 무시)
-        for sql in [
-            "ALTER TABLE user_judgments ADD COLUMN sent_at TEXT",
-            "ALTER TABLE users ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1",
-            # posting_tracks(posting_id, track_name) UNIQUE 보장 (중복 트랙 삽입 방지)
-            "CREATE UNIQUE INDEX IF NOT EXISTS uq_posting_track ON posting_tracks(posting_id, track_name)",
-        ]:
-            try:
-                conn.execute(sql)
-                conn.commit()
-            except Exception:
-                pass
+    for sql in _SCHEMA_STMTS:
+        execute(sql)
+    for sql in _MIGRATION_STMTS:
+        try:
+            execute(sql)
+        except Exception:
+            pass  # 이미 존재하는 컬럼·인덱스는 무시
 
 
 def reset_db() -> None:
     """테이블 전체 삭제 후 재생성. 개발·테스트 초기화용."""
-    drop_sql = """
-    DROP TABLE IF EXISTS user_judgments;
-    DROP TABLE IF EXISTS posting_tracks;
-    DROP TABLE IF EXISTS users;
-    DROP TABLE IF EXISTS postings;
-    """
-    with _connect() as conn:
-        conn.executescript(drop_sql + SCHEMA_SQL)
-
-
-def execute(sql: str, params: tuple = ()) -> None:
-    """쓰기 쿼리 실행."""
-    with _connect() as conn:
-        conn.execute(sql, params)
-        conn.commit()
-
-
-def fetchall(sql: str, params: tuple = ()) -> list[dict]:
-    """읽기 쿼리 실행 → dict 리스트 반환."""
-    with _connect() as conn:
-        conn.row_factory = sqlite3.Row
-        cur = conn.execute(sql, params)
-        return [dict(row) for row in cur.fetchall()]
+    for table in ("user_judgments", "posting_tracks", "users", "postings"):
+        execute(f"DROP TABLE IF EXISTS {table}")
+    for sql in _SCHEMA_STMTS:
+        execute(sql)
 
 
 # ── 공고 ────────────────────────────────────────────────────────────────────
@@ -171,7 +200,6 @@ def save_batch(records: list[dict]) -> None:
 def upsert_detail(posting: dict) -> None:
     """상세 크롤링 결과를 alio_id 기준으로 UPDATE.
     posting에는 idx와 변경할 필드만 담아 전달한다."""
-    # Posting TypedDict 키 → DB 컬럼명 변환
     col_map = {"org": "org_name", "url": "posting_url"}
     fields = {k: v for k, v in posting.items() if k != "idx"}
     if not fields:
@@ -231,7 +259,7 @@ def _row_to_posting(row: dict) -> dict:
         d["idx"] = d.pop("alio_id", 0)
     d["org"] = d.pop("org_name", "")
     d["url"] = d.pop("posting_url", "")
-    d.pop("posting_id", None)  # DB 내부 ID 제거
+    d.pop("posting_id", None)
     return d
 
 
@@ -490,8 +518,3 @@ def clear() -> None:
     )
     execute("DELETE FROM posting_tracks WHERE posting_id IN (SELECT posting_id FROM postings)")
     execute("DELETE FROM postings")
-
-
-def _connect() -> sqlite3.Connection:
-    """TODO: MIGRATE TO D1 — 이 함수 제거. D1은 영속 커넥션 없이 REST API 호출."""
-    return sqlite3.connect(DB_PATH)
