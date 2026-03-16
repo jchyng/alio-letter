@@ -9,4 +9,4 @@ GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
 [[d1_databases]]
 binding = "DB"
 database_name = "alio-letter"
-database_id = ""   # wrangler d1 create alio-letter 실행 후 채울 것
+database_id = "c9d83ecb-1178-46e7-93fe-e51aa178b0b6"
