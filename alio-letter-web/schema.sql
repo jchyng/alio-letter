@@ -31,7 +31,8 @@ CREATE TABLE IF NOT EXISTS posting_tracks (
     track_name      TEXT NOT NULL,
     positions       TEXT,
     total_positions INTEGER,
-    eligibility     TEXT   -- JSON {"education":...,"career":...,...}
+    eligibility     TEXT,  -- JSON {"education":...,"career":...,...}
+    UNIQUE(posting_id, track_name)
 );
 
 CREATE TABLE IF NOT EXISTS users (

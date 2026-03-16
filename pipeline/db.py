@@ -47,7 +47,8 @@ CREATE TABLE IF NOT EXISTS posting_tracks (
     track_name      TEXT NOT NULL,
     positions       TEXT,
     total_positions INTEGER,
-    eligibility     TEXT   -- JSON {"education":...,"career":...,...}
+    eligibility     TEXT,  -- JSON {"education":...,"career":...,...}
+    UNIQUE(posting_id, track_name)
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -81,10 +82,12 @@ def init_db() -> None:
     """테이블이 없으면 생성. 시작 시 항상 안전하게 호출 가능."""
     with _connect() as conn:
         conn.executescript(SCHEMA_SQL)
-        # 기존 DB 컬럼 마이그레이션 (이미 있으면 무시)
+        # 기존 DB 컬럼·인덱스 마이그레이션 (이미 있으면 무시)
         for sql in [
             "ALTER TABLE user_judgments ADD COLUMN sent_at TEXT",
             "ALTER TABLE users ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1",
+            # posting_tracks(posting_id, track_name) UNIQUE 보장 (중복 트랙 삽입 방지)
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_posting_track ON posting_tracks(posting_id, track_name)",
         ]:
             try:
                 conn.execute(sql)
@@ -235,7 +238,7 @@ def save_tracks(tracks: list[dict]) -> None:
         eligibility = track.get("eligibility")
         execute(
             """
-            INSERT INTO posting_tracks
+            INSERT OR IGNORE INTO posting_tracks
                 (posting_id, track_name, positions, total_positions, eligibility)
             VALUES (?,?,?,?,?)
             """,
