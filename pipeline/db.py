@@ -18,6 +18,10 @@ import os
 import requests
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).parent / ".env")
+
 RAW_DIR = Path(__file__).parent / "raw"
 
 # CREATE TABLE 구문을 개별 실행해야 하므로 리스트로 분리
