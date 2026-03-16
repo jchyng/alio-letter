@@ -300,6 +300,9 @@ crontab -l | grep alio-letter
 
 ## 7. E2E 테스트 (전체 흐름)
 
+> ⚠️ `RESEND_FROM` 이슈: 도메인 인증 전에는 `onboarding@resend.dev`만 사용 가능하며,
+> 이 경우 **Resend 가입 이메일 주소로만** 수신 가능. Pages Secret 확인 필요.
+
 1. https://alio-letter.pages.dev/register → 이름·이메일·스펙·조건 입력 → 등록
    - [ ] 가입 확인 이메일 수신 확인
 
@@ -319,6 +322,22 @@ crontab -l | grep alio-letter
    tail -f /home/pi/workspace/alio-letter/pipeline/daily.log
    ```
    - [ ] 오류 없이 완료 확인
+
+### 이메일 수신 안 될 때 체크리스트
+
+```bash
+# 1. Pages Secret 목록 확인
+npx wrangler pages secret list --project-name alio-letter
+
+# 2. RESEND_FROM을 onboarding@resend.dev 로 업데이트
+echo "onboarding@resend.dev" | npx wrangler pages secret put RESEND_FROM --project-name alio-letter
+
+# 3. 기존 사용자로 재가입 시 이메일 미발송 → DB에서 삭제 후 재테스트
+npx wrangler d1 execute alio-letter --command="DELETE FROM users WHERE email='이메일주소'" --remote
+
+# 4. 재배포
+npm run deploy
+```
 
 ---
 
