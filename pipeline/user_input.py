@@ -142,8 +142,8 @@ def collect() -> None:
 
     profile["certificates"] = _ask_certificates(profile.get("certificates"))
 
-    military_default = profile.get("military", "해당없음(여성)")
-    print("\n병역 구분: 필필 / 면제 / 미필 / 해당없음(여성)")
+    military_default = profile.get("military", "병역필")
+    print("\n병역 구분: 병역필 / 면제 / 미필 / 해당없음(여성)")
     profile["military"] = _ask("병역 구분", military_default)
 
     # 장애인 등급 — 공고마다 경증 5%, 중증 10% 등 다르게 적용됨
