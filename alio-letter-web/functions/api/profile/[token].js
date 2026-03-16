@@ -120,7 +120,7 @@ ${specText}
   "birth_year": 출생연도(정수 또는 null),
   "languages": [{"name": "어학명", "score": 점수(정수)}],
   "certificates": ["자격증명"],
-  "military": "필필 또는 면제 또는 미필 또는 해당없음(여성)",
+  "military": "병역필 또는 면제 또는 미필 또는 해당없음(여성)",
   "disability_grade": "해당없음 또는 경증 또는 중증",
   "veteran_type": "해당없음 또는 해당 유형명",
   "is_low_income": false,
