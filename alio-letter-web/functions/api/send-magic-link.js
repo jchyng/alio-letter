@@ -23,10 +23,13 @@ export async function onRequestPost(context) {
       return jsonResponse({ success: false, error: '올바른 이메일 주소를 입력해주세요.' }, 400);
     }
 
+    // register.js와 동일하게 정규화 (대소문자 불일치 방지)
+    const normalizedEmail = email.trim().toLowerCase();
+
     // D1에서 email로 edit_token 조회
     const user = await context.env.DB.prepare(
       'SELECT edit_token FROM users WHERE email = ?'
-    ).bind(email).first();
+    ).bind(normalizedEmail).first();
 
     // 보안: 가입 여부와 무관하게 동일 응답 (계정 존재 여부 유추 방지)
     if (user) {
