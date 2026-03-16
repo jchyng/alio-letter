@@ -228,13 +228,18 @@ def fetch_detail_postings() -> int:
     total = len(unanalyzed)
     print(f"미완료 공고 {total}건 처리 시작")
 
+    failed = 0
     for i, posting in enumerate(unanalyzed, 1):
         print(f"[{i}/{total}] {posting['url']}")
-        detail = _fetch_detail(posting)
-        db.upsert_detail(detail)
+        try:
+            detail = _fetch_detail(posting)
+            db.upsert_detail(detail)
+        except Exception as e:
+            print(f"  상세 크롤링 실패: {e}")
+            failed += 1
 
-    print(f"완료: {total}건")
-    return total
+    print(f"완료: {total}건 (성공 {total - failed}, 실패 {failed})")
+    return total - failed
 
 
 if __name__ == "__main__":
