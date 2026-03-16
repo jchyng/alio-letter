@@ -83,7 +83,7 @@ def fetch_all_postings() -> int:
 
 
 def fetch_new_postings() -> int:
-    """오늘 등록된 공고만 수집. 매일 23:59 실행."""
+    """오늘 등록된 공고만 수집. daily.py에서 매일 실행."""
     today = date.today().strftime("%Y.%m.%d")
     total = 0
     page = 1
