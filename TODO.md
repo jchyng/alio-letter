@@ -94,7 +94,7 @@ EOF
 > `CF_D1_DATABASE_ID`: 3-2번 단계에서 D1 생성 후 출력되는 database_id
 > `CF_API_TOKEN`: Cloudflare 대시보드 → My Profile → API Tokens → Create Token → D1 Edit 권한 포함
 
-- [ ] .env 작성 완료
+- [x] .env 작성 완료
 
 ### 2-3. 로컬 DB 초기화 확인
 
@@ -104,7 +104,7 @@ source venv/bin/activate
 python -c "import db; db.init_db(); print('DB OK')"
 ```
 
-- [ ] DB 초기화 확인
+- [x] DB 초기화 확인
 
 ---
 
@@ -142,7 +142,7 @@ npx wrangler whoami
 # "You are logged in with an User API Token" 메시지 확인
 ```
 
-- [ ] wrangler 인증 완료
+- [x] wrangler 인증 완료
 
 ### 3-2. D1 데이터베이스 생성
 
@@ -163,7 +163,7 @@ database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
 **→ `database_id` 값을 복사한다.**
 
-- [ ] D1 생성 완료
+- [x] D1 생성 완료
 
 ### 3-3. wrangler.toml 및 .env에 ID 입력
 
@@ -184,8 +184,8 @@ CF_D1_DATABASE_ID=위에서_복사한_database_id
 CF_API_TOKEN=위에서_생성한_API_토큰
 ```
 
-- [ ] wrangler.toml 수정 완료
-- [ ] pipeline/.env CF 항목 입력 완료
+- [x] wrangler.toml 수정 완료
+- [x] pipeline/.env CF 항목 입력 완료
 
 ### 3-4. D1에 테이블 초기화
 
@@ -200,7 +200,7 @@ npx wrangler d1 execute alio-letter --command="SELECT name FROM sqlite_master WH
 # postings, posting_tracks, users, user_judgments 4개 나와야 함
 ```
 
-- [ ] 테이블 초기화 확인
+- [x] 테이블 초기화 확인
 
 ### 3-5. Cloudflare Pages Secret 등록
 
@@ -222,7 +222,7 @@ npx wrangler pages secret put RESEND_FROM
 
 또는 대시보드: Workers & Pages → `alio-letter` → Settings → Environment variables
 
-- [ ] 환경변수 등록 완료
+- [x] 환경변수 등록 완료
 
 ---
 
@@ -237,8 +237,8 @@ npm run deploy
 처음 배포 시 프로젝트 이름 입력 프롬프트가 뜨면: `alio-letter` 입력
 
 배포 완료 후:
-- [ ] https://alio-letter.pages.dev 접속 → 랜딩 페이지 표시 확인
-- [ ] https://alio-letter.pages.dev/register 접속 → 회원가입 폼 확인
+- [x] https://alio-letter.pages.dev 접속 → 랜딩 페이지 표시 확인
+- [x] https://alio-letter.pages.dev/register 접속 → 회원가입 폼 확인
 
 ---
 
@@ -270,7 +270,7 @@ python daily.py --skip-scrape
 # [mailer] 발송 완료: test@example.com 가 출력되면 성공
 ```
 
-- [ ] 수동 테스트 완료
+- [x] 수동 테스트 완료
 
 ---
 
