@@ -14,6 +14,7 @@ import db
 import scraper
 import user_input
 import judge
+import daily
 from analyzer import analyze_all_postings
 
 MENU = """
@@ -23,6 +24,7 @@ MENU = """
 3. 분석 (Gemini)
 4. 사용자 정보 입력/수정
 5. 자격요건 판정
+6. 데일리 파이프라인 전체 실행
 0. 종료
 """
 
@@ -53,6 +55,9 @@ def run(choice: str) -> None:
             return
         model = judge._load_client()
         judge.judge_all_tracks(profile, model)
+
+    elif choice == "6":
+        daily.run()
 
     else:
         print(f"알 수 없는 선택: {choice}")
