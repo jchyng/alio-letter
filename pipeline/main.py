@@ -15,7 +15,7 @@ import scraper
 import user_input
 import daily
 
-# judge, analyzer는 google-generativeai에 의존 → 실행 시점에 lazy import
+# judge, analyzer는 google-genai에 의존 → 실행 시점에 lazy import
 
 MENU = """
 === alio-letter 파이프라인 ===

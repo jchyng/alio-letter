@@ -26,7 +26,7 @@ import scraper
 import filter as posting_filter
 import mailer
 
-# judge/genai는 실행 시점에 lazy import (google-generativeai 선택적 의존성)
+# judge/genai는 실행 시점에 lazy import (google-genai 선택적 의존성)
 _judge = None
 
 
@@ -62,12 +62,12 @@ def run(skip_scrape: bool = False) -> None:
         print(f"[daily] 수집 완료: {n}건")
         scraper.fetch_detail_postings()
 
-    # 2. 공고 분석 (google-generativeai lazy import)
+    # 2. 공고 분석 (google-genai lazy import)
     try:
         from analyzer import analyze_all_postings
         analyze_all_postings()
     except ImportError:
-        print("[daily] google-generativeai 미설치 — 분석 단계 skip")
+        print("[daily] google-genai 미설치 — 분석 단계 skip")
 
     # 3. 사용자 목록
     users = db.load_all_users()
