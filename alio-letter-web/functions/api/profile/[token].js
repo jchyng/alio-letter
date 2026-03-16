@@ -73,7 +73,7 @@ export async function onRequestPost(context) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `다음 사용자 스펙을 JSON으로 파싱해줘. 스펙: ${spec_text}` }] }],
+            contents: [{ parts: [{ text: buildSpecPrompt(spec_text) }] }],
             generationConfig: { responseMimeType: 'application/json' },
           }),
         }
@@ -103,6 +103,30 @@ export async function onRequestPost(context) {
     console.error('Profile POST error:', err);
     return jsonResponse({ success: false, error: '처리 중 오류가 발생했습니다.' }, 500);
   }
+}
+
+function buildSpecPrompt(specText) {
+  return `다음 사용자 스펙 텍스트를 아래 JSON 스키마에 맞게 파싱하라. JSON만 출력할 것.
+
+스펙:
+${specText}
+
+스키마:
+{
+  "education": "최종학력 (예: 4년제 대졸, 고졸, 석사)",
+  "career_years": 총경력연수(정수, 신입=0),
+  "career_fields": [{"field": "분야명", "years": 연수(정수)}],
+  "birth_year": 출생연도(정수 또는 null),
+  "languages": [{"name": "어학명", "score": 점수(정수)}],
+  "certificates": ["자격증명"],
+  "military": "필필 또는 면제 또는 미필 또는 해당없음(여성)",
+  "disability_grade": "해당없음 또는 경증 또는 중증",
+  "veteran_type": "해당없음 또는 해당 유형명",
+  "is_low_income": false,
+  "is_north_korean_defector": false,
+  "is_independent_youth": false,
+  "is_multicultural_child": false
+}`;
 }
 
 function jsonResponse(data, status = 200) {
