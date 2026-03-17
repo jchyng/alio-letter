@@ -8,9 +8,14 @@
 # 4. 사용자별: 필터 → 트랙 로드 → judge → save_judgments → mailer → mark_sent
 # 5. 결과 요약 출력
 
+# 스케줄링 (crontab)
+# 08:00 — 수집+분석만:  python daily.py --skip-mail
+# 09:00 — 발송만:       python daily.py --skip-scrape
+
 사용법:
     python daily.py               # 전체 실행
     python daily.py --skip-scrape # 수집 건너뜀 (개발·테스트용)
+    python daily.py --skip-mail   # 발송 건너뜀 (수집·분석만)
 """
 
 import os
@@ -50,7 +55,7 @@ def _judge_track(profile, track, bonus_points, model):
     return judge.judge_track(profile, track, bonus_points, model)
 
 
-def run(skip_scrape: bool = False) -> None:
+def run(skip_scrape: bool = False, skip_mail: bool = False) -> None:
     db.init_db()
 
     # 1. 공고 수집
@@ -132,6 +137,9 @@ def run(skip_scrape: bool = False) -> None:
                     judged_total += len(judgments)
 
         # 4d. 이메일 발송
+        if skip_mail:
+            continue
+
         unsent = db.load_unsent_judgments(user_id)
         if not unsent:
             continue
@@ -183,5 +191,6 @@ def run(skip_scrape: bool = False) -> None:
 
 
 if __name__ == "__main__":
-    skip = "--skip-scrape" in sys.argv
-    run(skip_scrape=skip)
+    skip_scrape = "--skip-scrape" in sys.argv
+    skip_mail = "--skip-mail" in sys.argv
+    run(skip_scrape=skip_scrape, skip_mail=skip_mail)

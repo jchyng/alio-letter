@@ -243,9 +243,6 @@ def fetch_detail_postings() -> int:
 
 
 if __name__ == "__main__":
-    if db.is_empty():
-        total = fetch_all_postings()
-    else:
-        total = fetch_new_postings()
+    total = fetch_new_postings()
     print(f"저장 완료: {total}건")
     fetch_detail_postings()

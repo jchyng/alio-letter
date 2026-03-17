@@ -84,7 +84,7 @@ export async function onRequestPost(context) {
 
 async function sendWelcomeEmail(env, to, name, editToken) {
   const from = env.RESEND_FROM || 'onboarding@resend.dev';
-  const profileUrl = `https://alio-letter.pages.dev/profile/${editToken}`;
+  const profileUrl = `https://alio-letter.pages.dev/profile?token=${editToken}`;
   const html = `
     <p>안녕하세요, ${name}님!</p>
     <p>alio-letter에 등록이 완료되었습니다.</p>

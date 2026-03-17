@@ -1,3 +1,2 @@
-# SPA routing for dynamic profile pages
-/profile/*  /profile.html  200
+# SPA routing for dynamic pages
 /subscribe/*  /subscribe.html  200

@@ -1,0 +1,36 @@
+# main 브랜치 push 시 Cloudflare Pages 자동 배포
+#
+# 필요한 GitHub Secrets (Settings → Secrets → Actions):
+#   CLOUDFLARE_API_TOKEN  — D1 Edit + Pages Edit 권한 포함 토큰
+#   CLOUDFLARE_ACCOUNT_ID — Cloudflare 계정 ID
+
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'alio-letter-web/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: alio-letter-web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: alio-letter-web
+        run: npm ci
+
+      - name: Deploy to Cloudflare Pages
+        working-directory: alio-letter-web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npm run deploy

@@ -33,7 +33,7 @@ export async function onRequestPost(context) {
 
     // 보안: 가입 여부와 무관하게 동일 응답 (계정 존재 여부 유추 방지)
     if (user) {
-      const profileUrl = `https://alio-letter.pages.dev/profile/${user.edit_token}`;
+      const profileUrl = `https://alio-letter.pages.dev/profile?token=${user.edit_token}`;
       await sendMagicLinkEmail(context.env, email, profileUrl);
     }
 

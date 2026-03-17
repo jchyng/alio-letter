@@ -277,6 +277,11 @@ python daily.py --skip-scrape
 ## 6. crontab 등록
 
 > **주의**: crontab에서는 venv의 절대경로 python을 사용해야 함.
+>
+> **스케줄 설계**
+> - 08:00 — 수집 + 분석 (`--skip-mail`): 공고 크롤링 및 Gemini 분석
+> - 09:00 — 발송 (`--skip-scrape`): 판정 결과 이메일 발송
+> - 분리한 이유: 분석 소요 시간이 가변적이라 발송 시각을 고정하기 위함
 
 ```bash
 crontab -e
@@ -285,8 +290,11 @@ crontab -e
 아래 내용 추가:
 
 ```cron
-# alio-letter — 데일리 파이프라인 (매일 오전 6시)
-0 6 * * * /home/pi/workspace/alio-letter/pipeline/venv/bin/python /home/pi/workspace/alio-letter/pipeline/daily.py >> /home/pi/workspace/alio-letter/pipeline/daily.log 2>&1
+# alio-letter — 수집+분석 (매일 08시)
+0 8 * * * /home/pi/workspace/alio-letter/pipeline/venv/bin/python /home/pi/workspace/alio-letter/pipeline/daily.py --skip-mail >> /home/pi/workspace/alio-letter/pipeline/daily.log 2>&1
+
+# alio-letter — 이메일 발송 (매일 09시)
+0 9 * * * /home/pi/workspace/alio-letter/pipeline/venv/bin/python /home/pi/workspace/alio-letter/pipeline/daily.py --skip-scrape >> /home/pi/workspace/alio-letter/pipeline/daily.log 2>&1
 ```
 
 등록 확인:
