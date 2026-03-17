@@ -302,7 +302,7 @@ crontab -e
 crontab -l | grep alio-letter
 ```
 
-- [ ] crontab 등록 완료
+- [x] crontab 등록 완료
 
 ---
 
