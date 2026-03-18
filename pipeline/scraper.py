@@ -113,39 +113,37 @@ def fetch_new_postings() -> int:
 
 
 def _download_announcement(idx: int, soup) -> tuple[str, str]:
-    """공고문 첨부파일 1건 다운로드. (path, ext) 반환. 실패 시 ('', '')."""
-    tables = soup.find_all("table")
-    if len(tables) < 3:
-        return "", ""
+    """공고문 첨부파일 1건 다운로드. (path, ext) 반환. 실패 시 ('', '').
+    공고문 위치가 공고마다 달라 전체 테이블을 탐색한다."""
+    for table in soup.find_all("table"):
+        for tr in table.find_all("tr"):
+            th = tr.find("th")
+            a = tr.find("a", href=True)
+            if not th or not a or "공고문" not in th.get_text():
+                continue
 
-    for tr in tables[2].find_all("tr"):
-        th = tr.find("th")
-        a = tr.find("a", href=True)
-        if not th or not a or "공고문" not in th.get_text():
-            continue
+            href = a["href"]
+            original_name = a.get_text(strip=True)
+            ext = Path(original_name).suffix.lstrip(".").lower()
 
-        href = a["href"]
-        original_name = a.get_text(strip=True)
-        ext = Path(original_name).suffix.lstrip(".").lower()
+            qs = parse_qs(urlparse(href).query)
+            file_no = qs.get("fileNo", [None])[0]
+            prefix = file_no if file_no else hashlib.md5(href.encode()).hexdigest()[:8]
 
-        qs = parse_qs(urlparse(href).query)
-        file_no = qs.get("fileNo", [None])[0]
-        prefix = file_no if file_no else hashlib.md5(href.encode()).hexdigest()[:8]
+            ATTACHMENTS_DIR.mkdir(parents=True, exist_ok=True)
+            dest = ATTACHMENTS_DIR / f"{idx}_{prefix}.{ext}"
 
-        ATTACHMENTS_DIR.mkdir(parents=True, exist_ok=True)
-        dest = ATTACHMENTS_DIR / f"{idx}_{prefix}.{ext}"
+            if not dest.exists():
+                try:
+                    r = requests.get(href, headers=HEADERS, timeout=30)
+                    r.raise_for_status()
+                    dest.write_bytes(r.content)
+                    time.sleep(0.3)
+                except Exception as e:
+                    print(f"  파일 다운로드 실패: {e}")
+                    return "", ""
 
-        if not dest.exists():
-            try:
-                r = requests.get(href, headers=HEADERS, timeout=30)
-                r.raise_for_status()
-                dest.write_bytes(r.content)
-                time.sleep(0.3)
-            except Exception as e:
-                print(f"  파일 다운로드 실패: {e}")
-                return "", ""
-
-        return str(dest), ext
+            return str(dest), ext
 
     return "", ""
 
