@@ -49,10 +49,10 @@ def _load_gemini():
         return None
 
 
-def _judge_track(profile, track, bonus_points, model):
+def _judge_track(profile, track, bonus_points, model, preferred_work_fields=None):
     """judge 모듈 lazy import 후 단일 트랙 판정."""
     import judge
-    return judge.judge_track(profile, track, bonus_points, model)
+    return judge.judge_track(profile, track, bonus_points, model, preferred_work_fields)
 
 
 def run(skip_scrape: bool = False, skip_mail: bool = False) -> None:
@@ -124,9 +124,10 @@ def run(skip_scrape: bool = False, skip_mail: bool = False) -> None:
 
                 bonus_points = posting.get("bonus_points", "")
                 judgments = []
+                preferred_work_fields = prefs.get("work_fields") or None
                 for track in new_tracks:
                     try:
-                        j = _judge_track(profile, track, bonus_points, gemini_client)
+                        j = _judge_track(profile, track, bonus_points, gemini_client, preferred_work_fields)
                         j["idx"] = posting.get("idx")
                         judgments.append(j)
                     except Exception as e:
