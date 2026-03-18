@@ -21,7 +21,10 @@ load_dotenv(Path(__file__).parent / ".env")
 _DEFAULT_FROM = "onboarding@resend.dev"
 _SITE_BASE = "https://alio-letter.pages.dev"
 
-_ICON_CHECK = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M20 6 9 17l-5-5"/></svg>'
+# ── SVG 아이콘 ─────────────────────────────────────────────────────────────────
+_ICON_CHECK = '<span style="display:inline-block;width:20px;height:20px;background:#16a34a;border-radius:50%;color:#fff;font-size:13px;font-weight:900;line-height:20px;text-align:center;">✓</span>'
+_ICON_WARN  = '<span style="display:inline-block;width:20px;height:20px;background:#d97706;border-radius:50%;color:#fff;font-size:13px;font-weight:900;line-height:20px;text-align:center;">!</span>'
+_ICON_CROSS = '<span style="display:inline-block;width:20px;height:20px;background:#94a3b8;border-radius:50%;color:#fff;font-size:13px;font-weight:900;line-height:20px;text-align:center;">✕</span>'
 
 _ELIG_LABELS = [
     ("education",   "학력"),
@@ -33,8 +36,21 @@ _ELIG_LABELS = [
 ]
 
 
-def _req_rows(eligibility: dict) -> str:
-    """자격요건 항목별 ✓ 행 생성 (eligible 트랙만 오므로 모두 충족)."""
+def _parse_bonus_reasons(bonus_reasons: list[str]) -> tuple[list[str], list[str], list[str]]:
+    """bonus_reasons를 (적용됨, 확인 필요, 미적용) 세 목록으로 분리."""
+    applied, needs_check, not_applied = [], [], []
+    for r in (bonus_reasons or []):
+        if r.startswith("확인 필요"):
+            needs_check.append(r.removeprefix("확인 필요:").strip())
+        elif r.startswith("미적용"):
+            not_applied.append(r.removeprefix("미적용:").strip())
+        else:
+            applied.append(r)
+    return applied, needs_check, not_applied
+
+
+def _req_table(eligibility: dict, border_color: str = "#e2e8f0") -> str:
+    """자격요건 항목 테이블 — 모두 충족(✓)으로 표시."""
     rows = []
     for key, label in _ELIG_LABELS:
         val = (eligibility or {}).get(key, "")
@@ -50,51 +66,107 @@ def _req_rows(eligibility: dict) -> str:
           </td>
         </tr></table>
       </td></tr>""")
-    return "".join(rows)
-
-
-def _bonus_rows(bonus_reasons: list) -> str:
-    """가산점 항목별 행 생성."""
-    if not bonus_reasons:
+    if not rows:
         return ""
+    return f"""
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="border:1px solid {border_color};border-radius:8px;overflow:hidden;">
+      {"".join(rows)}
+    </table>"""
+
+
+def _bonus_table(applied: list[str], needs_check: list[str], not_applied: list[str],
+                 bonus_summary: str, is_recommended: bool) -> str:
+    """가산점 섹션 테이블 — 적용됨(✓ 초록) + 확인 필요(⚠ 노랑) + 미적용(✕ 회색) 행 구분."""
+    if not applied and not needs_check and not not_applied:
+        return ""
+
+    border_color = "#bfdbfe" if is_recommended else "#e2e8f0"
+    total_bg     = "#eff6ff" if is_recommended else "#f8fafc"
+    total_color  = "#1e3a8a" if is_recommended else "#0f172a"
+
     rows = []
-    for reason in bonus_reasons:
+
+    # ① 적용됨 행 (초록 체크)
+    for item in applied:
         rows.append(f"""
       <tr>
-        <td style="width:46px;padding:10px 8px 10px 16px;vertical-align:middle;border-bottom:1px solid #f8fafc;">{_ICON_CHECK}</td>
-        <td style="padding:10px 16px 10px 4px;vertical-align:middle;border-bottom:1px solid #f8fafc;">
-          <span style="font-size:13px;font-weight:600;color:#334155;">{reason}</span>
+        <td style="width:46px;padding:10px 8px 10px 16px;vertical-align:middle;border-bottom:1px solid #f1f5f9;">
+          {_ICON_CHECK}
+        </td>
+        <td style="padding:10px 16px 10px 4px;vertical-align:middle;border-bottom:1px solid #f1f5f9;">
+          <span style="font-size:13px;font-weight:600;color:#334155;">{item}</span>
         </td>
       </tr>""")
-    return "".join(rows)
+
+    # ② 확인 필요 행 (노랑 경고)
+    for item in needs_check:
+        rows.append(f"""
+      <tr style="background:#fffbeb;">
+        <td style="width:46px;padding:10px 8px 10px 16px;vertical-align:middle;border-bottom:1px solid #fef3c7;">
+          {_ICON_WARN}
+        </td>
+        <td style="padding:10px 16px 10px 4px;vertical-align:middle;border-bottom:1px solid #fef3c7;">
+          <span style="font-size:13px;font-weight:600;color:#92400e;">확인 필요</span>
+          <span style="display:block;font-size:11px;color:#b45309;margin-top:2px;">{item}</span>
+        </td>
+      </tr>""")
+
+    # ③ 미적용 (준비 가능) 행 (회색 ✕, 취소선)
+    for item in not_applied:
+        rows.append(f"""
+      <tr style="background:#f8fafc;">
+        <td style="width:46px;padding:10px 8px 10px 16px;vertical-align:middle;border-bottom:1px solid #e2e8f0;">
+          {_ICON_CROSS}
+        </td>
+        <td style="padding:10px 16px 10px 4px;vertical-align:middle;border-bottom:1px solid #e2e8f0;">
+          <span style="font-size:11px;color:#94a3b8;display:block;margin-bottom:2px;">준비하면 받을 수 있어요</span>
+          <span style="font-size:13px;color:#94a3b8;text-decoration:line-through;">{item}</span>
+        </td>
+      </tr>""")
+
+    # ④ 합계 행
+    rows.append(f"""
+      <tr style="background:{total_bg};">
+        <td colspan="2" style="padding:14px 16px;font-size:13px;font-weight:800;color:{total_color};">
+          가산점 합계 <span style="font-size:18px;">{bonus_summary}</span>
+        </td>
+      </tr>""")
+
+    return f"""
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="border:1px solid {border_color};border-radius:8px;overflow:hidden;">
+      {"".join(rows)}
+    </table>"""
 
 
-def _track_block(track: dict, judgment: dict, is_recommended: bool) -> str:
-    """eligible 트랙 1개 HTML 블록. 목업 트랙 A/B 섹션 구조."""
+def _track_section(track: dict, judgment: dict, is_recommended: bool) -> str:
+    """eligible 트랙 1개 HTML 섹션. 목업 트랙 A/B 구조."""
     track_name    = track.get("track_name", "")
     total         = track.get("total_positions", "")
     eligibility   = track.get("eligibility") or {}
-    bonus         = judgment.get("bonus_summary", "없음")
+    bonus_summary = judgment.get("bonus_summary", "없음")
     bonus_reasons = judgment.get("bonus_reasons") or []
 
     count_str = f" · {total}명" if total else ""
+    applied, needs_check, not_applied = _parse_bonus_reasons(bonus_reasons)
 
-    # 트랙 헤더 — 추천 트랙은 파란 강조
     if is_recommended:
         header_html = f"""
   <tr>
     <td style="background:#eff6ff;padding:12px 20px;border-top:2px solid #1d4ed8;border-bottom:1px solid #bfdbfe;">
       <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-        <td><span style="font-size:14px;font-weight:800;color:#1e3a8a;">{track_name}</span><span style="font-size:12px;color:#94a3b8;margin-left:8px;">{count_str}</span></td>
-        <td align="right"><span style="background:#1d4ed8;color:#ffffff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:4px;">추천</span></td>
+        <td>
+          <span style="font-size:14px;font-weight:800;color:#1e3a8a;">{track_name}</span>
+          <span style="font-size:12px;color:#94a3b8;margin-left:8px;">{count_str}</span>
+        </td>
+        <td align="right">
+          <span style="background:#1d4ed8;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:4px;">추천</span>
+        </td>
       </tr></table>
     </td>
   </tr>"""
-        req_border  = "border:1px solid #bfdbfe;"
-        bonus_border = "border:1px solid #bfdbfe;"
-        bonus_bg    = "background:#eff6ff;"
-        bonus_color = "#1e3a8a"
-        total_color = "#1e3a8a"
+        req_border = "#bfdbfe"
     else:
         header_html = f"""
   <tr>
@@ -103,48 +175,24 @@ def _track_block(track: dict, judgment: dict, is_recommended: bool) -> str:
       <span style="font-size:12px;color:#94a3b8;margin-left:8px;">{count_str}</span>
     </td>
   </tr>"""
-        req_border  = "border:1px solid #e2e8f0;"
-        bonus_border = "border:1px solid #e2e8f0;"
-        bonus_bg    = "background:#f8fafc;"
-        bonus_color = "#334155"
-        total_color = "#0f172a"
+        req_border = "#e2e8f0"
 
-    # 자격요건 체크리스트
-    req_rows = _req_rows(eligibility)
+    req_html = _req_table(eligibility, border_color=req_border)
     req_section = f"""
   <tr><td style="padding:16px 20px 0;">
     <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.8px;">기본 자격요건</p>
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="{req_border}border-radius:8px;overflow:hidden;">
-      {req_rows}
-    </table>
-  </td></tr>""" if req_rows else ""
+    {req_html}
+  </td></tr>""" if req_html else ""
 
-    # 가산점 섹션
-    bonus_row_html = _bonus_rows(bonus_reasons)
-    if bonus_row_html:
-        bonus_section = f"""
+    bonus_html = _bonus_table(applied, needs_check, not_applied, bonus_summary, is_recommended)
+    bonus_section = f"""
   <tr><td style="padding:16px 20px 0;">
-    <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.8px;">가산점</p>
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="{bonus_border}border-radius:8px;overflow:hidden;">
-      {bonus_row_html}
-      <tr style="{bonus_bg}">
-        <td colspan="2" style="padding:14px 16px;font-size:13px;font-weight:800;color:{bonus_color};">
-          가산점 합계: <span style="font-size:16px;">{bonus}</span>
-        </td>
-      </tr>
-    </table>
-  </td></tr>"""
-    elif bonus and bonus != "없음":
-        bonus_section = f"""
-  <tr><td style="padding:16px 20px 0;">
-    <table width="100%" cellpadding="0" cellspacing="0" border="0">
-      <tr><td style="border-left:3px solid #1d4ed8;padding:10px 14px;{bonus_bg}border-radius:0 6px 6px 0;">
-        <span style="font-size:13px;font-weight:700;color:{bonus_color};">가산점 {bonus}</span>
-      </td></tr>
-    </table>
-  </td></tr>"""
-    else:
-        bonus_section = ""
+    <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:0.8px;">
+      가산점
+      <span style="font-weight:400;color:#64748b;">— 적용됨(✓) / 직접 확인 필요(⚠)</span>
+    </p>
+    {bonus_html}
+  </td></tr>""" if bonus_html else ""
 
     return header_html + req_section + bonus_section
 
@@ -168,34 +216,43 @@ def build_email_html(user_name: str, items: list[dict], edit_token: str = "") ->
 
     posting_blocks = []
     for item in items:
-        posting = item["posting"]
+        posting    = item["posting"]
         org        = posting.get("org_name") or posting.get("org", "")
         title      = posting.get("title", "")
         deadline   = posting.get("deadline", "")
         url        = posting.get("posting_url") or posting.get("url", "")
         salary_url = posting.get("salary_url", "")
 
-        # eligible 트랙만 추림
+        # eligible 트랙만
         eligible_tracks = [t for t in item.get("tracks", []) if t["judgment"].get("eligible")]
         if not eligible_tracks:
             continue
 
-        # 가산점이 있는 트랙을 "추천"으로 강조 (없으면 첫 번째가 추천)
-        has_bonus = [t for t in eligible_tracks if t["judgment"].get("bonus_summary", "없음") != "없음"]
-        recommended_name = has_bonus[0]["track"]["track_name"] if has_bonus else eligible_tracks[0]["track"]["track_name"]
+        # 가산점 있는 트랙 → "추천"
+        has_bonus = [t for t in eligible_tracks
+                     if t["judgment"].get("bonus_summary", "없음") != "없음"]
+        recommended_name = (has_bonus[0]["track"]["track_name"] if has_bonus
+                            else eligible_tracks[0]["track"]["track_name"])
 
         track_sections = "\n".join(
-            _track_block(t["track"], t["judgment"], is_recommended=(t["track"]["track_name"] == recommended_name))
+            _track_section(
+                t["track"], t["judgment"],
+                is_recommended=(t["track"]["track_name"] == recommended_name)
+            )
             for t in eligible_tracks
         )
 
         salary_btn = ""
         if salary_url:
-            salary_btn = f'<td style="padding-left:6px;width:50%;"><a href="{salary_url}" style="display:block;background:#ffffff;color:#1d4ed8;text-align:center;padding:12.5px;border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;border:1.5px solid #1d4ed8;">연봉 정보 보기</a></td>'
+            salary_btn = f"""
+          <td style="padding-left:6px;width:50%;">
+            <a href="{salary_url}" style="display:block;background:#ffffff;color:#1d4ed8;text-align:center;padding:12.5px;border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;border:1.5px solid #1d4ed8;">연봉 정보 보기</a>
+          </td>"""
 
         posting_blocks.append(f"""
-<!-- 공고 카드: {org} -->
+<!-- ━━━ 공고: {org} ━━━ -->
 <tr><td style="height:12px;background:#ffffff;"></td></tr>
+<tr><td>
 <table width="100%" cellpadding="0" cellspacing="0" border="0">
 
   <!-- ① 공고 히어로 -->
@@ -208,20 +265,26 @@ def build_email_html(user_name: str, items: list[dict], edit_token: str = "") ->
     </td>
   </tr>
 
+  <!-- 트랙 목록 (eligible만) -->
   {track_sections}
 
-  <!-- CTA -->
+  <!-- 구분 여백 -->
   <tr><td style="height:4px;background:#ffffff;"></td></tr>
-  <tr><td style="padding:16px 20px 20px;background:#ffffff;">
-    <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-      <td style="{'width:50%;padding-right:6px;' if salary_url else ''}">
-        <a href="{url}" style="display:block;background:#1d4ed8;color:#ffffff;text-align:center;padding:14px;border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;">잡알리오 원문 보기</a>
-      </td>
-      {salary_btn}
-    </tr></table>
-  </td></tr>
 
-</table>""")
+  <!-- CTA -->
+  <tr>
+    <td style="padding:16px 20px 20px;background:#ffffff;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td style="{'width:50%;padding-right:6px;' if salary_url else ''}">
+          <a href="{url}" style="display:block;background:#1d4ed8;color:#ffffff;text-align:center;padding:14px;border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;">잡알리오 원문 보기</a>
+        </td>
+        {salary_btn}
+      </tr></table>
+    </td>
+  </tr>
+
+</table>
+</td></tr>""")
 
     body = "\n".join(posting_blocks)
     eligible_count = sum(
@@ -243,8 +306,13 @@ def build_email_html(user_name: str, items: list[dict], edit_token: str = "") ->
     @media screen and (max-width:600px){{
       .main-wrapper{{width:100%!important;border-radius:0!important;}}
       .main-container{{padding:0!important;}}
-      .stack-column{{display:block!important;width:100%!important;max-width:100%!important;padding-left:0!important;padding-right:0!important;margin-bottom:12px!important;box-sizing:border-box;}}
+      .stack-column{{display:block!important;width:100%!important;max-width:100%!important;
+        padding-left:0!important;padding-right:0!important;margin-bottom:12px!important;box-sizing:border-box;}}
       .spacer{{display:none!important;}}
+      .content-padding{{padding:16px 16px 0!important;}}
+      .hero-padding{{padding:16px 16px 20px!important;}}
+      .footer-padding{{padding:14px 16px!important;}}
+      .cta-padding{{padding:16px 16px 8px!important;}}
     }}
   </style>
 </head>
@@ -253,13 +321,15 @@ def build_email_html(user_name: str, items: list[dict], edit_token: str = "") ->
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f5f9;" class="main-container">
 <tr><td align="center" style="padding:24px 16px;" class="main-container">
 
-<table width="600" cellpadding="0" cellspacing="0" border="0" class="main-wrapper" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.10);">
+<table width="600" cellpadding="0" cellspacing="0" border="0" class="main-wrapper"
+       style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.10);">
 
   <!-- ━━━ 헤더 바 ━━━ -->
   <tr>
     <td style="background:#0f172a;padding:10px 20px;">
       <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-        <td><span style="font-size:13px;font-weight:800;color:#ffffff;">Alio·Letter</span><span style="font-size:11px;color:#475569;margin-left:8px;">채용 분석 레포트</span></td>
+        <td><span style="font-size:13px;font-weight:800;color:#ffffff;">Alio·Letter</span>
+            <span style="font-size:11px;color:#475569;margin-left:8px;">채용 분석 레포트</span></td>
         <td align="right"><span style="font-size:10px;color:#475569;">{today}</span></td>
       </tr></table>
     </td>
@@ -268,7 +338,9 @@ def build_email_html(user_name: str, items: list[dict], edit_token: str = "") ->
   <!-- ━━━ 인트로 ━━━ -->
   <tr><td style="padding:20px 20px 8px;background:#ffffff;">
     <p style="margin:0 0 4px;font-size:15px;color:#0f172a;">안녕하세요, <strong>{user_name}</strong>님!</p>
-    <p style="margin:0;font-size:13px;color:#64748b;">오늘 지원 가능한 트랙 <strong style="color:#1d4ed8;">{eligible_count}개</strong>를 분석했습니다.</p>
+    <p style="margin:0;font-size:13px;color:#64748b;">
+      오늘 지원 가능한 트랙 <strong style="color:#1d4ed8;">{eligible_count}개</strong>를 분석했습니다.
+    </p>
   </td></tr>
 
   <!-- ━━━ 공고 목록 ━━━ -->
@@ -276,13 +348,15 @@ def build_email_html(user_name: str, items: list[dict], edit_token: str = "") ->
 
   <!-- ━━━ 푸터 ━━━ -->
   <tr><td style="height:16px;background:#ffffff;"></td></tr>
-  <tr><td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:16px 20px;border-radius:0 0 12px 12px;">
-    <span style="font-size:11px;color:#94a3b8;line-height:1.8;display:block;">
-      본 메일은 Alio·Letter 맞춤 채용 알림 서비스에서 발송되었습니다.<br/>
-      자격·가산점 판단은 AI 추정치이며, 최종 기준은 공고 원문을 확인하세요.
-    </span>
-    <span style="display:block;margin-top:12px;">{footer_manage}{footer_unsub}</span>
-  </td></tr>
+  <tr>
+    <td class="footer-padding" style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:16px 20px;border-radius:0 0 12px 12px;">
+      <span style="font-size:11px;color:#94a3b8;line-height:1.8;display:block;">
+        본 메일은 Alio·Letter 맞춤 채용 알림 서비스에서 발송되었습니다.<br/>
+        자격·가산점 판단은 AI 추정치이며, 최종 기준은 공고 원문을 확인하세요.
+      </span>
+      <span style="display:block;margin-top:12px;">{footer_manage}{footer_unsub}</span>
+    </td>
+  </tr>
 
 </table>
 
