@@ -353,29 +353,29 @@ npm run deploy
 
 ### A. Resend 도메인 인증 (실서비스 필수)
 > 현재 `onboarding@resend.dev`로 발송 중 — Resend 계정 이메일로만 수신 가능, 실사용자 수신 불가.
+> `alio-letter.pages.dev`는 Cloudflare 소유 서브도메인이라 DNS 레코드 추가 불가 → 사용 불가.
+> **Cloudflare Registrar에서 도메인을 구매하면 DNS 관리가 같은 대시보드에서 가능해 편리하다.**
 
-1. 도메인 구매 (예: `alio-letter.com`) — 가비아, 후이즈 등
-2. Resend 대시보드 → Domains → Add Domain → DNS 레코드 추가 → Verify
-3. Pages Secret `RESEND_FROM` 변경: `noreply@alio-letter.com`
-4. `register.js`, `send-magic-link.js`의 프로필 URL도 커스텀 도메인으로 변경 검토
+1. 도메인 구매 (Cloudflare Registrar 권장: https://dash.cloudflare.com → Domain Registration)
+2. Resend 대시보드 → Domains → Add Domain → DNS 레코드 3개 발급
+3. Cloudflare DNS 관리 페이지에서 레코드 3개 추가 → Resend에서 Verify
+4. Pages Secret `RESEND_FROM` 변경: `noreply@구매한도메인`
 
-- [ ] 도메인 구매 및 Resend 인증 완료
-- [ ] RESEND_FROM Pages Secret 업데이트
+```bash
+echo "noreply@구매한도메인" | npx wrangler pages secret put RESEND_FROM --project-name alio-letter
+npm run deploy
+```
+
+- [ ] 도메인 구매 완료
+- [ ] Resend DNS 인증 완료
+- [ ] RESEND_FROM Pages Secret 업데이트 및 재배포
 
 ### B. 이메일 템플릿 개선 (UX)
-> 현재 이메일 3종 모두 최소한의 HTML — 사용자 관점에서 성의있고 보기 좋게 개선 필요.
+> 완료 (2026-03-18)
 
-개선 대상:
-- **환영 이메일** (`register.js`): 서비스 소개, 다음 단계 안내, 브랜딩
-- **매직링크 이메일** (`send-magic-link.js`): 보안 안내 문구, 유효시간 표시, 브랜딩
-- **매칭 이메일** (`mailer.py`): 공고 카드 디자인, 가산점 하이라이트, CTA 버튼, 푸터
-
-공통 개선 방향:
-- 일관된 브랜드 컬러·로고
-- 모바일 반응형
-- 명확한 CTA 버튼
-
-- [ ] 이메일 템플릿 3종 개선
+- [x] 환영 이메일 (`register.js`): 서비스 소개, CTA, 브랜딩 적용
+- [x] 매직링크 이메일 (`send-magic-link.js`): 보안 안내, 브랜딩 적용
+- [x] 매칭 이메일 (`mailer.py`): 공고 카드 디자인, 가산점 3분류(적용/확인필요/준비가능), CTA
 
 ---
 
