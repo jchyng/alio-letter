@@ -161,11 +161,19 @@ def run(skip_scrape: bool = False, skip_mail: bool = False) -> None:
                     "tracks": [],
                     "track_ids": [],
                 }
+            eligibility = row.get("eligibility")
+            if isinstance(eligibility, str):
+                import json as _json
+                try:
+                    eligibility = _json.loads(eligibility)
+                except Exception:
+                    eligibility = {}
             posting_map[idx]["tracks"].append({
                 "track": {
                     "track_name": row.get("track_name"),
                     "positions": row.get("positions"),
                     "total_positions": row.get("total_positions"),
+                    "eligibility": eligibility or {},
                 },
                 "judgment": {
                     "eligible": bool(row.get("eligible")),
