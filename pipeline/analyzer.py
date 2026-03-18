@@ -119,7 +119,7 @@ def _pdf_path(posting: Posting) -> Path | None:
         if p.exists():
             return p
 
-    ext = posting.get("attachment_ext", "").lower()
+    ext = (posting.get("attachment_ext") or "").lower()
     path = posting.get("attachment_path")
     if ext == "pdf" and path:
         p = Path(path)

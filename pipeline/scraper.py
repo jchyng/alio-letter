@@ -205,8 +205,8 @@ def _fetch_detail(posting: Posting) -> Posting:
     attachment_path, attachment_ext = _download_announcement(posting["idx"], soup)
     attachment_converted = hwp_to_pdf(attachment_path, attachment_ext) if attachment_path else ""
 
-    return Posting(
-        **posting,
+    result = dict(posting)
+    result.update(
         ncs=fields.get("표준직무(NCS)", ""),
         work_field=fields.get("근무분야", ""),
         employment_type=fields.get("고용형태", ""),
@@ -220,6 +220,7 @@ def _fetch_detail(posting: Posting) -> Posting:
         attachment_ext=attachment_ext,
         attachment_converted=attachment_converted,
     )
+    return Posting(**result)
 
 
 def fetch_detail_postings() -> int:
