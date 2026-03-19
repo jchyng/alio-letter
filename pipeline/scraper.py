@@ -114,6 +114,7 @@ def fetch_new_postings() -> int:
         if done:
             print()
             return total
+        time.sleep(1)  # IP 차단 방지: 페이지 간 1초 대기
         page += 1
     print()
     return total
@@ -250,6 +251,7 @@ def fetch_detail_postings() -> int:
         except Exception as e:
             print(f"  상세 크롤링 실패: {e}")
             failed += 1
+        time.sleep(2)  # IP 차단 방지: 공고 간 2초 대기
 
     print(f"완료: {total}건 (성공 {total - failed}, 실패 {failed})")
     return total - failed
