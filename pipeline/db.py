@@ -261,11 +261,20 @@ def load_fetched() -> list[dict]:
 
 def load_unfetched() -> list[dict]:
     """상세 크롤링 미완료 공고 반환.
-    employment_type NULL: 상세 크롤링 자체가 안 된 것.
-    attachment_ext = '': 상세 크롤링은 됐지만 파일 다운로드가 실패한 것."""
+    - employment_type NULL: 상세 크롤링 자체가 안 된 것
+    - attachment_ext = '': 파일 다운로드 실패
+    - 변환 가능 확장자(ZIP 포함)인데 attachment_converted 없음: 이전 코드에서 변환 못 한 것"""
+    convertible = "','".join([
+        "hwp", "hwpx", "doc", "docx", "odt", "rtf",
+        "ppt", "pptx", "xls", "xlsx", "ods", "zip",
+    ])
     return [_row_to_posting(r)
             for r in fetchall(
-                "SELECT * FROM postings WHERE employment_type IS NULL OR attachment_ext = ''"
+                f"""SELECT * FROM postings
+                    WHERE employment_type IS NULL
+                       OR attachment_ext = ''
+                       OR (attachment_ext IN ('{convertible}')
+                           AND (attachment_converted IS NULL OR attachment_converted = ''))"""
             )]
 
 
