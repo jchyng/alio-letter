@@ -124,23 +124,36 @@ def _d1_post(sql: str, params: tuple, retries: int = 3, delay: int = 5):
     raise last_exc
 
 
+def _raise_d1_error(res):
+    """D1 응답이 실패면 상세 메시지 포함해 예외 발생."""
+    try:
+        body = res.json()
+        errors = body.get("errors") or []
+        msg = "; ".join(e.get("message", "") for e in errors)
+    except Exception:
+        msg = res.text[:200]
+    raise RuntimeError(f"D1 오류 ({res.status_code}): {msg}")
+
+
 def execute(sql: str, params: tuple = ()) -> int:
     """D1에 쓰기 쿼리 실행. last_row_id 반환."""
     res = _d1_post(sql, params)
-    res.raise_for_status()
+    if not res.ok:
+        _raise_d1_error(res)
     data = res.json()
     if not data.get("success"):
-        raise RuntimeError(f"D1 오류: {data.get('errors')}")
+        _raise_d1_error(res)
     return data["result"][0]["meta"].get("last_row_id", 0)
 
 
 def fetchall(sql: str, params: tuple = ()) -> list[dict]:
     """D1에 읽기 쿼리 실행 → dict 리스트 반환."""
     res = _d1_post(sql, params)
-    res.raise_for_status()
+    if not res.ok:
+        _raise_d1_error(res)
     data = res.json()
     if not data.get("success"):
-        raise RuntimeError(f"D1 오류: {data.get('errors')}")
+        _raise_d1_error(res)
     return data["result"][0].get("results", [])
 
 
@@ -168,16 +181,23 @@ def reset_db() -> None:
 # ── 공고 ────────────────────────────────────────────────────────────────────
 
 def upsert_posting(posting: dict) -> None:
-    """공고 1건 INSERT OR REPLACE. alio_id(=idx)를 기준으로 덮어쓴다."""
+    """공고 1건 upsert. alio_id 충돌 시 기본 필드(제목·마감일 등)만 갱신.
+    posting_id를 유지해야 posting_tracks 외래키가 깨지지 않으므로 INSERT OR REPLACE 대신 ON CONFLICT DO UPDATE 사용."""
     execute(
         """
-        INSERT OR REPLACE INTO postings
+        INSERT INTO postings
             (alio_id, title, org_name, posting_url, deadline, registered,
              ncs, work_field, employment_type, location, education,
              recruit_type, is_substitute, salary_url, preferred,
              attachment_path, attachment_ext, attachment_converted,
              bonus_points, notes)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ON CONFLICT(alio_id) DO UPDATE SET
+            title      = excluded.title,
+            org_name   = excluded.org_name,
+            posting_url= excluded.posting_url,
+            deadline   = excluded.deadline,
+            registered = excluded.registered
         """,
         (
             str(posting.get("idx", "")),
