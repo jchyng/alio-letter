@@ -1,6 +1,11 @@
 import hashlib
+import json
 import re
+import shutil
+import subprocess
+import tempfile
 import time
+import zipfile
 from datetime import date
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -10,6 +15,9 @@ from bs4 import BeautifulSoup
 
 import db
 from models import Posting
+
+# LibreOffice로 PDF 변환 가능한 확장자
+_LIBREOFFICE_EXTS = {"hwp", "hwpx", "doc", "docx", "odt", "rtf", "ppt", "pptx", "xls", "xlsx", "ods"}
 
 BASE_URL = "https://job.alio.go.kr"
 LIST_URL = f"{BASE_URL}/recruit.do?ing=2"
@@ -156,12 +164,9 @@ def _download_announcement(idx: int, soup) -> tuple[str, str]:
     return "", ""
 
 
-def hwp_to_pdf(path: str, ext: str) -> str:
-    """hwp/hwpx → pdf 변환 (LibreOffice). 변환 불필요하거나 실패 시 '' 반환."""
-    import subprocess
-    import shutil
-    import tempfile
-    if ext not in ("hwp", "hwpx"):
+def _convert_to_pdf(path: str, ext: str) -> str:
+    """LibreOffice로 문서 → PDF 변환. 지원하지 않는 확장자이거나 실패 시 '' 반환."""
+    if ext not in _LIBREOFFICE_EXTS:
         return ""
     with tempfile.TemporaryDirectory() as tmp:
         tmp_src = Path(tmp) / Path(path).name
@@ -172,16 +177,32 @@ def hwp_to_pdf(path: str, ext: str) -> str:
                 capture_output=True, timeout=120,
             )
         except FileNotFoundError:
-            print("  LibreOffice 미설치, HWP 변환 건너뜀")
+            print("  LibreOffice 미설치, 변환 건너뜀")
             return ""
         tmp_pdf = tmp_src.with_suffix(".pdf")
         if result.returncode == 0 and tmp_pdf.exists():
             dest = Path(path).with_suffix(".pdf")
             shutil.move(str(tmp_pdf), dest)
-            Path(path).unlink(missing_ok=True)  # 변환 완료 후 원본 hwp/hwpx 제거
+            Path(path).unlink(missing_ok=True)
             return str(dest)
     print(f"  변환 실패: {Path(path).name}")
     return ""
+
+
+def _extract_zip(zip_path: str, idx: int) -> list[str]:
+    """ZIP 압축 해제 후 내부 파일 경로 반환 (최대 3개, 디렉토리 제외)."""
+    dest_dir = ATTACHMENTS_DIR / f"{idx}_unzipped"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    paths = []
+    try:
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            members = [m for m in zf.namelist() if not m.endswith("/")][:3]
+            for m in members:
+                zf.extract(m, dest_dir)
+                paths.append(str(dest_dir / m))
+    except Exception as e:
+        print(f"  ZIP 압축 해제 실패: {e}")
+    return paths
 
 
 def _fetch_detail(posting: Posting) -> Posting:
@@ -216,7 +237,22 @@ def _fetch_detail(posting: Posting) -> Posting:
                     fields[key] = td.get_text(strip=True)
 
     attachment_path, attachment_ext = _download_announcement(posting["idx"], soup)
-    attachment_converted = hwp_to_pdf(attachment_path, attachment_ext) if attachment_path else ""
+
+    if attachment_ext == "zip" and attachment_path:
+        # ZIP: 압축 해제 후 각 파일 PDF 변환. 경로 목록을 JSON으로 저장
+        extracted = _extract_zip(attachment_path, posting["idx"])
+        converted = []
+        for ep in extracted:
+            ext = Path(ep).suffix.lstrip(".").lower()
+            if ext == "pdf":
+                converted.append(ep)
+            else:
+                cp = _convert_to_pdf(ep, ext)
+                if cp:
+                    converted.append(cp)
+        attachment_converted = json.dumps(converted, ensure_ascii=False) if converted else ""
+    else:
+        attachment_converted = _convert_to_pdf(attachment_path, attachment_ext) if attachment_path else ""
 
     result = dict(posting)
     result.update(

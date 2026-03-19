@@ -111,22 +111,33 @@ def _load_client() -> genai.Client:
     return genai.Client(api_key=api_key)
 
 
-def _pdf_path(posting: Posting) -> Path | None:
-    """분석할 PDF 경로 결정. attachment_converted 우선, 없으면 ext==pdf인 attachment_path."""
+def _pdf_paths(posting: Posting) -> list[Path]:
+    """분석할 PDF 경로 목록.
+    attachment_converted 우선 (ZIP은 JSON array로 저장됨), 없으면 ext==pdf인 attachment_path."""
     converted = posting.get("attachment_converted")
     if converted:
+        # ZIP에서 추출된 여러 파일: JSON array
+        try:
+            raw = json.loads(converted)
+            if isinstance(raw, list):
+                paths = [Path(p) for p in raw if Path(p).exists()]
+                if paths:
+                    return paths
+        except (json.JSONDecodeError, TypeError):
+            pass
+        # 단일 경로
         p = Path(converted)
         if p.exists():
-            return p
+            return [p]
 
     ext = (posting.get("attachment_ext") or "").lower()
     path = posting.get("attachment_path")
     if ext == "pdf" and path:
         p = Path(path)
         if p.exists():
-            return p
+            return [p]
 
-    return None
+    return []
 
 
 def _parse_response(idx: int, raw: str) -> tuple[list[PostingTrack], str, str]:
@@ -159,15 +170,8 @@ def _parse_response(idx: int, raw: str) -> tuple[list[PostingTrack], str, str]:
     return tracks, bonus_points, notes
 
 
-def analyze_posting(posting: Posting, client: genai.Client) -> tuple[list[PostingTrack], str, str]:
-    """
-    공고 1건을 Gemini로 분석.
-    반환: (tracks, bonus_points, notes)
-    """
-    pdf_path = _pdf_path(posting)
-    if pdf_path is None:
-        raise ValueError("분석할 PDF 없음")
-
+def _analyze_single_pdf(idx: int, pdf_path: Path, client: genai.Client) -> tuple[list[PostingTrack], str, str]:
+    """PDF 1개를 Gemini로 분석. (tracks, bonus_points, notes) 반환."""
     with open(pdf_path, "rb") as f:
         pdf_bytes = f.read()
 
@@ -186,7 +190,27 @@ def analyze_posting(posting: Posting, client: genai.Client) -> tuple[list[Postin
             temperature=0.0,  # 응답 일관성 확보 — 같은 PDF에서 매번 동일한 결과 보장
         ),
     ))
-    return _parse_response(posting["idx"], response.text)
+    return _parse_response(idx, response.text)
+
+
+def analyze_posting(posting: Posting, client: genai.Client) -> tuple[list[PostingTrack], str, str]:
+    """
+    공고 1건을 Gemini로 분석. ZIP에서 추출된 여러 파일이면 각각 분석 후 합산.
+    반환: (tracks, bonus_points, notes)
+    """
+    paths = _pdf_paths(posting)
+    if not paths:
+        raise ValueError("분석할 PDF 없음")
+
+    all_tracks, bonus_points, notes = [], "", ""
+    for pdf_path in paths:
+        tracks, bp, nt = _analyze_single_pdf(posting["idx"], pdf_path, client)
+        all_tracks.extend(tracks)
+        if bp and bp != "해당 없음":
+            bonus_points = bp
+        if nt:
+            notes = nt
+    return all_tracks, bonus_points, notes
 
 
 def analyze_all_postings() -> None:
@@ -208,13 +232,13 @@ def analyze_all_postings() -> None:
             skipped += 1
             continue
 
-        pdf_path = _pdf_path(posting)
-        if pdf_path is None:
+        pdf_paths = _pdf_paths(posting)
+        if not pdf_paths:
             print(f"[{idx}] PDF 없음, 건너뜀")
             skipped += 1
             continue
 
-        print(f"[{idx}] 분석 중: {pdf_path.name}")
+        print(f"[{idx}] 분석 중: {', '.join(p.name for p in pdf_paths)}")
         try:
             tracks, bonus_points, notes = analyze_posting(posting, client)
 
