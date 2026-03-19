@@ -260,9 +260,13 @@ def load_fetched() -> list[dict]:
 
 
 def load_unfetched() -> list[dict]:
-    """상세 크롤링 미완료 공고만 반환 (employment_type NULL)."""
+    """상세 크롤링 미완료 공고 반환.
+    employment_type NULL: 상세 크롤링 자체가 안 된 것.
+    attachment_ext = '': 상세 크롤링은 됐지만 파일 다운로드가 실패한 것."""
     return [_row_to_posting(r)
-            for r in fetchall("SELECT * FROM postings WHERE employment_type IS NULL")]
+            for r in fetchall(
+                "SELECT * FROM postings WHERE employment_type IS NULL OR attachment_ext = ''"
+            )]
 
 
 def load_posting_id_map() -> dict[int, int]:
