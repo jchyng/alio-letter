@@ -20,6 +20,7 @@
 
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -31,6 +32,11 @@ import scraper
 import filter as posting_filter
 import mailer
 
+
+def _log(msg: str) -> None:
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{ts}] {msg}", flush=True)
+
 # judge/genai는 실행 시점에 lazy import (google-genai 선택적 의존성)
 _judge = None
 
@@ -39,13 +45,13 @@ def _load_gemini():
     """Gemini 클라이언트 로드. google-genai 미설치 또는 API 키 없으면 None 반환."""
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        print("[daily] GEMINI_API_KEY 없음 — 판정 단계 skip")
+        _log(" GEMINI_API_KEY 없음 — 판정 단계 skip")
         return None
     try:
         from google import genai
         return genai.Client(api_key=api_key)
     except ImportError:
-        print("[daily] google-genai 미설치 — 판정 단계 skip")
+        _log(" google-genai 미설치 — 판정 단계 skip")
         return None
 
 
@@ -60,11 +66,11 @@ def run(skip_scrape: bool = False, skip_mail: bool = False) -> None:
 
     # 1. 공고 수집
     if skip_scrape:
-        print("[daily] --skip-scrape: 수집 단계 건너뜀")
+        _log(" --skip-scrape: 수집 단계 건너뜀")
     else:
-        print("[daily] 신규 공고 수집 중...")
+        _log(" 신규 공고 수집 중...")
         n = scraper.fetch_new_postings()
-        print(f"[daily] 수집 완료: {n}건")
+        _log(f" 수집 완료: {n}건")
         scraper.fetch_detail_postings()
 
     # 2. 공고 분석 (google-genai lazy import)
@@ -72,15 +78,15 @@ def run(skip_scrape: bool = False, skip_mail: bool = False) -> None:
         from analyzer import analyze_all_postings
         analyze_all_postings()
     except ImportError:
-        print("[daily] google-genai 미설치 — 분석 단계 skip")
+        _log(" google-genai 미설치 — 분석 단계 skip")
 
     # 3. 사용자 목록
     users = db.load_all_users()
     if not users:
-        print("[daily] 등록된 사용자 없음 — 종료")
+        _log(" 등록된 사용자 없음 — 종료")
         return
 
-    print(f"[daily] 사용자 {len(users)}명 처리 시작")
+    _log(f" 사용자 {len(users)}명 처리 시작")
     # 상세 크롤링 완료된 공고만 필터링·판정 대상 (employment_type NULL인 것 제외)
     all_postings = db.load_fetched()
     # idx → posting_id 매핑 (사용자 루프 밖에서 1회 조회 — N×M 쿼리 방지)
@@ -101,10 +107,10 @@ def run(skip_scrape: bool = False, skip_mail: bool = False) -> None:
         # 4a. 필터링
         matched = posting_filter.filter_postings(all_postings, prefs)
         if not matched:
-            print(f"[daily] {name}({email}): 매칭 공고 없음")
+            _log(f" {name}({email}): 매칭 공고 없음")
             continue
 
-        print(f"[daily] {name}({email}): {len(matched)}건 매칭")
+        _log(f" {name}({email}): {len(matched)}건 매칭")
 
         # 4b-c. 트랙 로드 + 판정 (이미 판정된 트랙은 건너뜀 — 중복 Gemini 호출 방지)
         if gemini_client and profile:

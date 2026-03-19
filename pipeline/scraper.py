@@ -19,10 +19,17 @@ ATTACHMENTS_DIR = Path(__file__).parent / "raw" / "attachments"
 
 
 def _fetch_page(page: int) -> list[Posting]:
-    """단일 페이지 크롤링."""
+    """단일 페이지 크롤링. 네트워크 오류 시 최대 3회 재시도."""
     url = f"{LIST_URL}&pageNo={page}"
-    resp = requests.get(url, headers=HEADERS, timeout=10)
-    resp.raise_for_status()
+    for attempt in range(3):
+        try:
+            resp = requests.get(url, headers=HEADERS, timeout=10)
+            resp.raise_for_status()
+            break
+        except requests.RequestException as e:
+            if attempt == 2:
+                raise
+            time.sleep(5)
     html = resp.content.decode("utf-8")
 
     soup = BeautifulSoup(html, "html.parser")
@@ -177,9 +184,16 @@ def hwp_to_pdf(path: str, ext: str) -> str:
 
 
 def _fetch_detail(posting: Posting) -> Posting:
-    """상세페이지 1건 크롤링. 첨부파일 다운로드 및 변환 포함."""
-    resp = requests.get(posting["url"], headers=HEADERS, timeout=10)
-    resp.raise_for_status()
+    """상세페이지 1건 크롤링. 첨부파일 다운로드 및 변환 포함. 네트워크 오류 시 최대 3회 재시도."""
+    for attempt in range(3):
+        try:
+            resp = requests.get(posting["url"], headers=HEADERS, timeout=10)
+            resp.raise_for_status()
+            break
+        except requests.RequestException as e:
+            if attempt == 2:
+                raise
+            time.sleep(5)
     resp.encoding = "utf-8"
     soup = BeautifulSoup(resp.text, "html.parser")
 

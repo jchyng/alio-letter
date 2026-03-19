@@ -15,6 +15,7 @@
 
 import json
 import os
+import time
 import requests
 from pathlib import Path
 
@@ -105,14 +106,27 @@ def _d1_headers() -> dict:
     }
 
 
+def _d1_post(sql: str, params: tuple, retries: int = 3, delay: int = 5):
+    """D1 REST API 호출. 5xx 또는 네트워크 오류 시 최대 retries회 재시도."""
+    body = {"sql": sql, "params": list(params)}
+    last_exc = None
+    for attempt in range(retries):
+        try:
+            res = requests.post(_d1_url(), headers=_d1_headers(), json=body, timeout=30)
+            if res.status_code < 500:
+                return res
+            # 5xx: 재시도 가능한 서버 오류
+            last_exc = requests.HTTPError(f"{res.status_code} Server Error", response=res)
+        except requests.RequestException as e:
+            last_exc = e
+        if attempt < retries - 1:
+            time.sleep(delay)
+    raise last_exc
+
+
 def execute(sql: str, params: tuple = ()) -> int:
     """D1에 쓰기 쿼리 실행. last_row_id 반환."""
-    res = requests.post(
-        _d1_url(),
-        headers=_d1_headers(),
-        json={"sql": sql, "params": list(params)},
-        timeout=30,
-    )
+    res = _d1_post(sql, params)
     res.raise_for_status()
     data = res.json()
     if not data.get("success"):
@@ -122,12 +136,7 @@ def execute(sql: str, params: tuple = ()) -> int:
 
 def fetchall(sql: str, params: tuple = ()) -> list[dict]:
     """D1에 읽기 쿼리 실행 → dict 리스트 반환."""
-    res = requests.post(
-        _d1_url(),
-        headers=_d1_headers(),
-        json={"sql": sql, "params": list(params)},
-        timeout=30,
-    )
+    res = _d1_post(sql, params)
     res.raise_for_status()
     data = res.json()
     if not data.get("success"):
